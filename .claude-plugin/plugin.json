@@ -1,6 +1,6 @@
 {
   "name": "secretaria-onboarding",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Conduz o onboarding da Secretária V4 num VPS, do zero ao agente de atendimento: deploy por tier (Coolify/Portainer/compose), Chatwoot + Langfuse com TLS, branding, import do agente via MCP e validação E2E.",
   "author": {
     "name": "fazer.ai",
