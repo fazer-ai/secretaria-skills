@@ -13,7 +13,7 @@
         "en": "Drives the Secretária V4 onboarding on a VPS, from zero to a working support agent: tiered deploy (Coolify/Portainer/compose), Chatwoot + Langfuse with TLS, branding, MCP agent import, and end-to-end validation.",
         "pt-BR": "Conduz o onboarding da Secretária V4 num VPS, do zero ao agente de atendimento: deploy por tier (Coolify/Portainer/compose), Chatwoot + Langfuse com TLS, branding, import do agente via MCP e validação E2E."
       },
-      "version": "0.1.5",
+      "version": "0.1.7",
       "source": "./",
       "category": "devops",
       "tags": [
