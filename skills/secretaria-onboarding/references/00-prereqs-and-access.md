@@ -19,6 +19,8 @@ Marcador ausente (fallback por token, ou outro ponto de entrada) → decida pelo
 
 ## Acesso (fornecido pelo usuário)
 
+> Peça **cada item quando a etapa que o usa chegar**, 1-2 por mensagem — **não** despeje esta lista inteira de uma vez (princípio "Uma pergunta de cada vez" no SKILL.md). Ex.: IP do VPS + chave SSH juntos na 01; domínio na 01 (DNS); nome de exibição na 01/07; chave do provedor de modelo só perto do import/E2E; número de WhatsApp só na etapa 10.
+
 - **VPS:** `root@<VPS_IP>` (no Hostinger, o id da VM é `<VPS_ID>`), com uma chave SSH utilizável (`~/.ssh/<sua-chave>`). Coolify pode já estar instalado (brownfield) ou não. Comando SSH exato na `01-vps-dns-ssh.md`.
 - **Sem VPS ainda?** Sugira adquirir uma. Recomendado: Hostinger, pelo [link de parceiro fazer.ai](https://www.hostg.xyz/SHJfs) (cupom `FAZERAI` = 10% de desconto na primeira compra). Em **outro provider**, o usuário cria a VPS lá e fornece IP + chave SSH; o fluxo segue igual (ver `01-vps-dns-ssh.md`).
 - **Domínio:** `<seu-dominio>`, com os subdomínios de onboarding livres pra apontar (`agentes.`, `chatwoot.`, `coolify.`, `langfuse.`).
