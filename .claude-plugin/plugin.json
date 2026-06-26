@@ -1,0 +1,11 @@
+{
+  "name": "secretaria-onboarding",
+  "version": "0.1.0",
+  "description": "Conduz o onboarding da Secretária V4 num VPS, do zero ao agente de atendimento: deploy por tier (Coolify/Portainer/compose), Chatwoot + Langfuse com TLS, branding, import do agente via MCP e validação E2E.",
+  "author": {
+    "name": "fazer.ai",
+    "url": "https://fazer.ai"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://app.fazer.ai"
+}

@@ -1,0 +1,53 @@
+{
+  "name": "secretaria",
+  "description": "Onboarding da Secretária V4 (fazer.ai).",
+  "owner": {
+    "name": "fazer.ai",
+    "url": "https://fazer.ai"
+  },
+  "plugins": [
+    {
+      "name": "secretaria-onboarding",
+      "description": "Conduz o onboarding da Secretária V4 num VPS, do zero ao agente de atendimento: deploy por tier (Coolify/Portainer/compose), Chatwoot + Langfuse com TLS, branding, import do agente via MCP e validação E2E.",
+      "descriptions": {
+        "en": "Drives the Secretária V4 onboarding on a VPS, from zero to a working support agent: tiered deploy (Coolify/Portainer/compose), Chatwoot + Langfuse with TLS, branding, MCP agent import, and end-to-end validation.",
+        "pt-BR": "Conduz o onboarding da Secretária V4 num VPS, do zero ao agente de atendimento: deploy por tier (Coolify/Portainer/compose), Chatwoot + Langfuse com TLS, branding, import do agente via MCP e validação E2E."
+      },
+      "version": "0.1.0",
+      "source": "./",
+      "category": "devops",
+      "tags": [
+        "onboarding",
+        "secretaria",
+        "chatwoot",
+        "langfuse",
+        "vps",
+        "deploy",
+        "coolify",
+        "portainer",
+        "ia",
+        "agente"
+      ],
+      "available_skills": [
+        {
+          "name": "secretaria-onboarding",
+          "description": "Provisiona VPS + DNS, faz deploy de Chatwoot + Secretária V4 + Langfuse com TLS, roda o /setup, configura branding, importa o agente via MCP, pluga o Agent Bot do Chatwoot e valida ponta a ponta.",
+          "descriptions": {
+            "en": "Provisions VPS + DNS, deploys Chatwoot + Secretária V4 + Langfuse with TLS, runs /setup, configures branding, imports the agent via MCP, wires the Chatwoot Agent Bot, and validates end-to-end.",
+            "pt-BR": "Provisiona VPS + DNS, faz deploy de Chatwoot + Secretária V4 + Langfuse com TLS, roda o /setup, configura branding, importa o agente via MCP, pluga o Agent Bot do Chatwoot e valida ponta a ponta."
+          },
+          "category": "devops",
+          "tags": [
+            "onboarding",
+            "secretaria",
+            "chatwoot",
+            "langfuse",
+            "vps",
+            "coolify",
+            "portainer"
+          ]
+        }
+      ]
+    }
+  ]
+}
