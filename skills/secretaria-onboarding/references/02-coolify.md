@@ -51,3 +51,12 @@ docker exec -i coolify-db psql -U coolify -d coolify
 ## Projeto + ambiente
 
 Crie (ou reaproveite) um projeto com o **nome de exibição do usuário** (ex.: `clinica-moreira`) e o ambiente `production`. Os UUIDs (server/projeto/env/serviços) são **gerados a cada instalação**: descubra-os pela API/DB; nunca chumbe UUIDs de outra instalação.
+
+## Registry privado do Harbor (só Pro)
+
+Imagens **Pro** (Chatwoot `chatwoot-pro`; Secretária V4 no projeto `secretaria`) são privadas no Harbor: o Coolify precisa da credencial registrada **antes** de puxar, senão o deploy falha (pull denied / 401). Só no caminho Pro:
+
+1. Pegue a credencial **per-user** no hub MCP `app-fazer-ai` (`create_registry_credential`, **sem** `license_id`; dry-run → apply com OK). Uma robot cobre todos os projetos Pro do usuário (Chatwoot + Secretária).
+2. Registre no Coolify (Servers → Registries, ou via API) apontando pra `harbor.fazer.ai` com o `username`/`secret`. **Nunca** logue o secret.
+
+No caminho **OSS** (imagem pública), pule isto inteiro.

@@ -139,7 +139,7 @@ existing ingress means the bundled-Caddy stack would conflict → reuse it or sw
 `docker-compose.prod.yml` BYO-proxy), and prints a decision matrix:
 
 - **secretaria-v4 present+healthy** → reuse.
-- **Chatwoot present** → reuse. `chatwoot-pro` (Harbor) and **OSS** (`chatwoot/chatwoot`) are **both**
+- **Chatwoot present** → reuse. `chatwoot-pro` (Harbor) and **OSS** (`ghcr.io/fazer-ai/chatwoot`, or third-party `chatwoot/chatwoot`) are **both**
   valid — OSS is not incompatible, it only lacks Pro features (Baileys WhatsApp, Kanban). An **absent**
   Chatwoot installs Pro if the operator has a hub subscription, else OSS.
 - **langfuse absent** → install only if selected.

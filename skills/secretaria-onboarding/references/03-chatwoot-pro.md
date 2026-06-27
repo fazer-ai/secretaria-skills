@@ -1,4 +1,11 @@
-# 03: Deploy do Chatwoot Pro (Harbor + Coolify API)
+# 03: Deploy do Chatwoot (Pro ou OSS)
+
+## Primeiro: leia o marcador e ramifique (Pro vs OSS)
+
+Leia `~/.fazer-ai/onboarding.json` → `chatwootTier`. Eixo **independente** da edição da Secretária V4 (`secretariaEdition`, etapa 4). Marcador ausente → fallback pelo hub (`list_licenses`): licença CHATWOOT disponível → Pro; senão OSS.
+
+- **`community` (OSS)** → imagem **pública** `ghcr.io/fazer-ai/chatwoot:latest` (nosso fork), `COMPOSE_PROFILES` vazio (sem `baileys-api`). **NÃO** rode `docker login` nem `generate_install_script` (não há licença e o pull é público). Deploy pelo compose genérico (`deploy/chatwoot/`, ver `deploy/chatwoot/README.md`); no Coolify, setar `CHATWOOT_IMAGE=ghcr.io/fazer-ai/chatwoot:latest` no `docker-compose.coolify.yml` e **remover** o `baileys-api`. **Pule a etapa 9b** (licenciar). O resto deste doc é **só Pro**.
+- **`pro`** → siga abaixo (Harbor + Coolify API + `docker login` + etapa 9b).
 
 ## Imagem privada (Harbor): use a licença/cred do usuário
 

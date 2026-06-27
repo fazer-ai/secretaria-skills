@@ -11,7 +11,7 @@
 
 O CLI `@fazer-ai/secretaria` roda ANTES do handoff e deixa marcadores que você deve **ler em vez de re-perguntar**:
 
-- **`onboarding.json`** — `{ chatwootTier: "pro" | "community", chatwootLicenseId? }`. Decide a edição do Chatwoot no deploy (ver `chatwoot-hub-register.md` e `deploy/chatwoot/README.md`). É a escolha **explícita** do operador; respeite-a (inclusive `community` = seguir sem Pro, mesmo que haja licença no hub).
+- **`onboarding.json`** — `{ chatwootTier: "pro" | "community", chatwootLicenseId?, secretariaEdition: "free" | "pro" }`. **Dois eixos independentes:** a edição do **Chatwoot** (`chatwootTier`, etapa 3 / `chatwoot-hub-register.md` / `deploy/chatwoot/README.md`) e a edição da **Secretária V4** (`secretariaEdition`, etapa 4 / `04-secretaria-v4.md`: `pro` = imagem privada Harbor; `free` = pública). É a escolha **explícita** do operador; respeite-a (inclusive `community`/`free` = seguir sem Pro, mesmo que haja licença/acesso no hub).
 - **`hostinger.json`** — `{ token }` da API Hostinger (quando o provider é Hostinger); o CLI também já o injeta nos MCPs.
 - **`preferences.json`** — defaults de UX do CLI (agente/provider/última licença); informativo, não load-bearing.
 

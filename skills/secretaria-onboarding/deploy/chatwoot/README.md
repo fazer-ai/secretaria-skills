@@ -6,7 +6,7 @@ The inbox Secretária V4 plugs into. The onboarding installs Chatwoot as part of
 | Edition | Image | When | Extra features |
 | --- | --- | --- | --- |
 | **Pro** | `harbor.fazer.ai/chatwoot/fazer-ai/chatwoot-pro` (private Harbor) | operator **has a hub license** | Baileys WhatsApp provider, Kanban |
-| **OSS** | `chatwoot/chatwoot` (public Docker Hub) | **no** hub subscription | standard Chatwoot (official WhatsApp Cloud API, etc.) |
+| **OSS** | `ghcr.io/fazer-ai/chatwoot` (our public fork) | **no** hub subscription | standard Chatwoot (official WhatsApp Cloud API, etc.) |
 
 **Both editions work with Secretária V4** — the integration is the standard Chatwoot Agent Bot + API
 (see [`docs/chatwoot.md`](../../docs/chatwoot.md)). OSS is **not** a downgrade of compatibility, only of

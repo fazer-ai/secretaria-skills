@@ -35,8 +35,8 @@ Abra a referência da etapa **antes** de executá-la (carga sob demanda). O flux
 | 1b | **Inventário brownfield**: sondar (read-only) e decidir por-serviço (reusar/instalar/sinalizar) | [`references/01b-brownfield.md`](references/01b-brownfield.md) |
 | 1c | **Selecionar o tier** de deploy + fixar o **contrato** (o que o deploy entrega à espinha) | [`references/01c-pick-tier.md`](references/01c-pick-tier.md) |
 | 2 | **Tier A** · Coolify: reusar/instalar, API Access, **Instance Domain** (`coolify.<root>`) | [`references/02-coolify.md`](references/02-coolify.md) |
-| 3 | Deploy **Chatwoot Pro** (API do Coolify, login Harbor, compose do installer) | [`references/03-chatwoot-pro.md`](references/03-chatwoot-pro.md) |
-| 4 | Deploy **Secretária V4** (`docker-compose.coolify.yml`, bootstrap 2-roles + migrate) | [`references/04-secretaria-v4.md`](references/04-secretaria-v4.md) |
+| 3 | Deploy **Chatwoot** (Pro **ou** OSS pelo marcador; Pro: API do Coolify, login Harbor) | [`references/03-chatwoot-pro.md`](references/03-chatwoot-pro.md) |
+| 4 | Deploy **Secretária V4** (edição Free/Pro pelo marcador, `docker-compose.coolify.yml`, bootstrap 2-roles + migrate) | [`references/04-secretaria-v4.md`](references/04-secretaria-v4.md) |
 | 5 | Deploy **Langfuse** (+ **MinIO S3 obrigatório**) | [`references/05-langfuse.md`](references/05-langfuse.md) |
 | 6 | v4 `/setup` (cria admin SUPER_ADMIN) → conectar **MCP** (OAuth) | [`references/06-setup-and-mcp.md`](references/06-setup-and-mcp.md) |
 | 7 | **Branding** via MCP (`branding_set` nome + cores padrão; `branding_asset_set` logo/favicon) | [`references/07-branding.md`](references/07-branding.md) |

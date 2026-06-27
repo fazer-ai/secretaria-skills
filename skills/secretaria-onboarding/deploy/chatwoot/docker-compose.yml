@@ -1,7 +1,7 @@
 # Chatwoot for fazer.ai — GENERIC flavor (Portainer / EasyPanel / Dokploy / plain Docker).
 #
 # ONE file, BOTH editions, selected by env (see ./README.md):
-#   - OSS (no hub subscription): defaults — public `chatwoot/chatwoot` image, no Baileys.
+#   - OSS (no hub subscription): defaults — our public `ghcr.io/fazer-ai/chatwoot` fork, no Baileys.
 #   - Pro (hub subscription): set CHATWOOT_IMAGE to the Harbor image AND COMPOSE_PROFILES=pro
 #     (adds the Baileys WhatsApp provider). Requires `docker login harbor.fazer.ai` with the
 #     license registry credential (hub: generate_install_script).
@@ -39,8 +39,8 @@ x-chatwoot-env: &chatwoot-env
 
 services:
   chatwoot:
-    # OSS default; for Pro set CHATWOOT_IMAGE=harbor.fazer.ai/chatwoot/fazer-ai/chatwoot-pro:latest
-    image: '${CHATWOOT_IMAGE:-chatwoot/chatwoot:latest}'
+    # OSS default (our fork); for Pro set CHATWOOT_IMAGE=harbor.fazer.ai/chatwoot/fazer-ai/chatwoot-pro:latest
+    image: '${CHATWOOT_IMAGE:-ghcr.io/fazer-ai/chatwoot:latest}'
     pull_policy: always
     volumes:
       - 'storage:/app/storage'
@@ -64,7 +64,7 @@ services:
       retries: 10
 
   sidekiq:
-    image: '${CHATWOOT_IMAGE:-chatwoot/chatwoot:latest}'
+    image: '${CHATWOOT_IMAGE:-ghcr.io/fazer-ai/chatwoot:latest}'
     pull_policy: always
     volumes:
       - 'storage:/app/storage'

@@ -34,6 +34,16 @@ Sem setar o Instance Domain (`coolify.<seu-dominio>`) o painel fica só em `http
 
 Reset recria o schema `public` e leva junto os grants da app role → próximo boot dá `42501 permission denied for schema public`. Nunca rode bare `migrate reset`; use `bun db:reset` (ou re-rode `bun db:bootstrap`).
 
+## Edições (imagens Free/Pro)
+
+### Secretária Pro ≠ licença Chatwoot avulsa (precisa da comunidade)
+
+A edição **Pro** da Secretária V4 (`secretariaEdition: "pro"`, marcador) usa imagem privada no Harbor (projeto `secretaria`), liberada **só pra membros da comunidade** (`isCommunityGrant`). Uma licença Chatwoot Pro **avulsa** NÃO desbloqueia a Secretária. A robot do Harbor é **per-user** (cobre a união dos projetos a que o usuário tem acesso): se Chatwoot e Secretária são ambos Pro, é **um único** `docker login` — não logue duas vezes. `free` = imagem pública, **sem** `docker login`.
+
+### Chatwoot OSS não faz `docker login` nem usa Baileys
+
+`chatwootTier: "community"` (OSS) usa a imagem pública `ghcr.io/fazer-ai/chatwoot` (nosso fork), **sem** `docker login` no Harbor e **sem** o `baileys-api` (`COMPOSE_PROFILES` vazio). Só o `pro` faz `docker login` no Harbor + imagem privada `chatwoot-pro` + Baileys. **Não** rode `generate_install_script`/`docker login` no caminho OSS (não há licença, e o pull público não precisa dela).
+
 ## Langfuse
 
 ### One-click sem MinIO = traces somem em silêncio

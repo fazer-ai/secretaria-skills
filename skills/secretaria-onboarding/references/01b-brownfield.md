@@ -45,7 +45,7 @@ Greenfield = tudo ausente = instala tudo. O resultado é um inventário por serv
 
 ## 4. Compatibilidade (o que torna "presente" em "incompatível")
 
-- **Chatwoot OSS vs Pro:** a imagem revela. `harbor.fazer.ai/chatwoot/fazer-ai/chatwoot-pro` = **Pro** (Kanban + features fazer-ai). `chatwoot/chatwoot` (Docker Hub) = **OSS**: o core do agente funciona (Agent Bot é padrão), mas **sem** Kanban/features Pro. Se o usuário quer essas features, sinalize a migração pra Pro.
+- **Chatwoot OSS vs Pro:** a imagem revela. `harbor.fazer.ai/chatwoot/fazer-ai/chatwoot-pro` = **Pro** (Kanban + features fazer-ai). `ghcr.io/fazer-ai/chatwoot` (nosso fork OSS) — ou o `chatwoot/chatwoot` oficial do Docker Hub, num brownfield de terceiro — = **OSS**: o core do agente funciona (Agent Bot é padrão), mas **sem** Kanban/features Pro. Se o usuário quer essas features, sinalize a migração pra Pro.
 - **Langfuse v3 vs v2:** a v4 fala com a v3 (arquitetura `clickhouse` + **`minio` obrigatório**, ver `references/05-langfuse.md`). Tag `:2`, ou ausência de `clickhouse`/`minio`, → incompatível/parcial: sinalize.
 - **Coolify:** validado em `4.x`. Versões muito antigas têm API diferente; confirme `:8000/api/health`=200 e cheque a versão pela tag.
 - **Postgres reusado (fora do Coolify, Tier B/C):** a v4 exige **pgvector** (extensão `vector`) e um **superuser** pro bootstrap das 2 roles (ver `references/04-secretaria-v4.md`). Um Postgres compartilhado sem pgvector ou sem acesso superuser → sinalize.

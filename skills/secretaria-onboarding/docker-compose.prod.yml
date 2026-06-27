@@ -16,7 +16,10 @@
 
 services:
   secretaria-v4:
-    image: ${SECRETARIA_V4_IMAGE:-ghcr.io/fazer-ai/secretaria-v4:latest}
+    # Edition-driven: Free (default, public image) vs Pro (set SECRETARIA_V4_IMAGE to the private
+    # Harbor image, project `secretaria`, after `docker login` — hub: create_registry_credential, per-user).
+    # PLACEHOLDER: the public Free image is not published yet — swap `secretaria-free` once it exists.
+    image: ${SECRETARIA_V4_IMAGE:-ghcr.io/fazer-ai/secretaria-free:latest}
     pull_policy: always
     restart: always
     # NOTE: no `command` here on purpose — the image's default entrypoint already runs, in order:

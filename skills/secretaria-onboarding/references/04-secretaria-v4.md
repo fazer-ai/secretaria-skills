@@ -1,8 +1,18 @@
 # 04: Deploy da Secretária V4
 
+## Edição: Free ou Pro (lê o marcador PRIMEIRO)
+
+Leia `~/.fazer-ai/onboarding.json` → `secretariaEdition` (`free` | `pro`; ausente = `free`). É a escolha **explícita** do CLI; respeite-a. Eixo **independente** do `chatwootTier` (etapa 3).
+
+- **`free`** → imagem **pública** (default do compose). **Sem** `docker login`, não seta `SECRETARIA_V4_IMAGE`. (Hoje o default é o placeholder `ghcr.io/fazer-ai/secretaria-free:latest` — a imagem pública Free ainda não foi publicada.)
+- **`pro`** → imagem **privada** no Harbor (projeto `secretaria`). Provisione a credencial **per-user** no hub MCP `app-fazer-ai` (`create_registry_credential`, **sem** `license_id`; dry-run → apply com OK), faça `docker login harbor.fazer.ai` com ela, e setar `SECRETARIA_V4_IMAGE` pra imagem privada (placeholder `harbor.fazer.ai/secretaria/secretaria-v4:latest` — **confirme o path** do projeto `secretaria`, em criação). **Nunca** logar o secret.
+  - **Reuso (per-user):** a robot do Harbor é **por usuário** (cobre a união dos projetos a que o usuário tem acesso). Se o Chatwoot também for Pro (etapa 3), é o **mesmo** `docker login` — não logar duas vezes.
+  - **Tier A (Coolify):** setar a env `SECRETARIA_V4_IMAGE` no serviço + registrar a Harbor registry credential no Coolify (igual ao Chatwoot Pro).
+  - **Tier B/C (compose):** `export SECRETARIA_V4_IMAGE=<imagem>` (ou no `.env`) antes do `docker compose up`.
+
 ## Compose
 
-Use o `docker-compose.coolify.yml` do repo (`POST /api/v1/services`, `docker_compose_raw` base64). Topologia: `secretaria-v4` (`ghcr.io/fazer-ai/secretaria-v4:latest`) + `postgres` (`pgvector/pgvector:pg17`: NÃO postgres puro: o schema precisa de `CREATE EXTENSION vector`). Volume `storage:/app/storage`. Healthcheck `wget -qO- http://localhost:3000/api/health`.
+Use o `docker-compose.coolify.yml` do repo (`POST /api/v1/services`, `docker_compose_raw` base64). Topologia: `secretaria-v4` (imagem conforme a **edição** acima — o compose default é a Free) + `postgres` (`pgvector/pgvector:pg17`: NÃO postgres puro: o schema precisa de `CREATE EXTENSION vector`). Volume `storage:/app/storage`. Healthcheck `wget -qO- http://localhost:3000/api/health`.
 
 ## Magic vars (Coolify gera; NÃO setar à mão)
 
