@@ -27,13 +27,13 @@ handoff). Veja [app.fazer.ai](https://app.fazer.ai). Para instalar manualmente:
 Instalam o plugin inteiro (as 3 skills ficam disponíveis, invocáveis por `/secretaria-…`):
 
 ```sh
-claude plugin marketplace add fazer-ai/secretaria-onboarding
-claude plugin install secretaria-onboarding@secretaria
+claude plugin marketplace add fazer-ai/secretaria-skills
+claude plugin install secretaria@secretaria
 ```
 
 ```sh
-codex plugin marketplace add fazer-ai/secretaria-onboarding
-codex plugin add secretaria-onboarding@secretaria
+codex plugin marketplace add fazer-ai/secretaria-skills
+codex plugin add secretaria@secretaria
 ```
 
 ### Hermes
@@ -41,10 +41,10 @@ codex plugin add secretaria-onboarding@secretaria
 Instala **por skill** (escolha as que quiser) a partir do mesmo tap:
 
 ```sh
-hermes skills tap add fazer-ai/secretaria-onboarding
-hermes skills install fazer-ai/secretaria-onboarding/secretaria-onboarding --yes --force
-hermes skills install fazer-ai/secretaria-onboarding/secretaria-dev --yes --force
-hermes skills install fazer-ai/secretaria-onboarding/secretaria-operation --yes --force
+hermes skills tap add fazer-ai/secretaria-skills
+hermes skills install fazer-ai/secretaria-skills/secretaria-onboarding --yes --force
+hermes skills install fazer-ai/secretaria-skills/secretaria-dev --yes --force
+hermes skills install fazer-ai/secretaria-skills/secretaria-operation --yes --force
 ```
 
 > O `--force` do Hermes passa o verdict `caution` do scanner de skills: as skills fazem
