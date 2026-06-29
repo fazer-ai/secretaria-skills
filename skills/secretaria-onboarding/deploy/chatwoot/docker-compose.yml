@@ -9,7 +9,7 @@
 # Secrets come from a .env you fill in (see ./.env.example) — Coolify generates those automatically,
 # so it has its own file (./docker-compose.coolify.yml). TLS + reverse proxy are EXTERNAL: this stack
 # only publishes Chatwoot's HTTP port on the host (default 127.0.0.1:3001) — terminate TLS in front
-# (the Secretária V4 bundled Caddy can front chatwoot.<domain> at it; see docs/deploy-portainer.md).
+# (the Secretária V4 bundled Caddy can front chatwoot.<domain> at it; see the secretaria-onboarding skill).
 #
 #   cp .env.example .env   # fill every CHANGE_ME, then:
 #   docker compose up -d                         # OSS

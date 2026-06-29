@@ -2,7 +2,7 @@
 
 ## 1. Importar (`agent_import`, mcp:write)
 
-A skill traz o **agente padrão** vendorado em [`samples/agents/maria-clinica-moreira.json`](../samples/agents/maria-clinica-moreira.json) ("Maria", recepção da Clínica Moreira fictícia: agendamento, FAQ via KB, voz, Asaas). **Importe-o por padrão**; só use outro export se o usuário trouxer o dele. Leia o arquivo e passe o conteúdo como `export`:
+A skill traz o **agente padrão** vendorado em `samples/agents/maria-clinica-moreira.json` ("Maria", recepção da Clínica Moreira fictícia: agendamento, FAQ via KB, voz, Asaas). **Importe-o por padrão**; só use outro export se o usuário trouxer o dele. Leia o arquivo e passe o conteúdo como `export`:
 
 ```jsonc
 agent_import { "export": <conteúdo de samples/agents/maria-clinica-moreira.json> }   // dry_run:true → preview, depois dry_run:false

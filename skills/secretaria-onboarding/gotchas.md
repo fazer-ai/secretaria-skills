@@ -8,19 +8,19 @@ Cada uma é uma armadilha conhecida. Leia a da etapa antes de executá-la.
 
 Pra um **service** do Coolify, o Traefik lê `service_applications.fqdn` no DB; o env `SERVICE_FQDN_*` é **derivado** dele e NÃO move a rota. Sintoma: o serviço sobe mas dá 503 (cert 000), e a v4 bootou com `publicUrl` sslip.io.
 
-Fix:
+Fix via `scripts/coolify.py` (base64-pipa o psql; o restart não monta curl com token à mão):
 
 ```sh
-docker exec -i coolify-db psql -U coolify -d coolify
-  -- ache o id:  SELECT id, name, fqdn FROM service_applications;
-  UPDATE service_applications SET fqdn='https://agentes.<seu-dominio>' WHERE id=<id>;
+python3 scripts/coolify.py list-apps --ssh root@<VPS_IP>                                          # ache o id
+python3 scripts/coolify.py set-fqdn  --ssh root@<VPS_IP> --app-id <id> --fqdn https://agentes.<seu-dominio>
+python3 scripts/coolify.py api-post  --base-url http://<VPS_IP>:8000 --token-file coolify.token --path /services/<uuid>/restart
 ```
 
-depois reinicie o serviço: `curl -H "Authorization: Bearer <token>" http://<VPS_IP>:8000/api/v1/services/<uuid>/restart`. **Preserve a porta** quando o template tem (Langfuse: `...:3000`). Verifique por sslip.io enquanto o DNS não propaga.
+**Preserve a porta** quando o template tem (Langfuse: `...:3000`). Verifique por sslip.io enquanto o DNS não propaga.
 
 ### `docker_compose_raw` precisa ser base64
 
-`POST /api/v1/services` com o compose cru → 422 "should be base64 encoded". Base64-encode antes de POSTar.
+`POST /api/v1/services` com o compose cru → 422 "should be base64 encoded". O `scripts/coolify.py create-service` faz o base64 do `--compose-file`; se POSTar à mão via `api-post`, encode antes.
 
 ### NÃO sobrescrever `command:` no compose da v4
 
@@ -48,7 +48,7 @@ A edição **Pro** da Secretária V4 (`secretariaEdition: "pro"`, marcador) usa 
 
 ### One-click sem MinIO = traces somem em silêncio
 
-Langfuse v3 exige S3 blob storage na ingestion. O one-click sobe sem MinIO e com `LANGFUSE_S3_*` vazias → `POST /ingestion` dá HTTP 500 e os traces nunca chegam; o `GET /projects` (só Postgres) retorna 200 e mascara. **Use `deploy/langfuse/docker-compose.coolify.yml`** (com MinIO) e valide a ingestion (espere 207). Detalhe em `references/05-langfuse.md`.
+Langfuse v3 exige S3 blob storage na ingestion. O one-click sobe sem MinIO e com `LANGFUSE_S3_*` vazias → `POST /ingestion` dá HTTP 500 e os traces nunca chegam; o `GET /projects` (só Postgres) retorna 200 e mascara. **Use `deploy/langfuse/docker-compose.coolify.yml`** (com MinIO) e valide com `scripts/langfuse-verify.py ingestion` (espere 207, não 500). Detalhe em `references/05-langfuse.md`.
 
 ## Config da v4 (pós-import)
 

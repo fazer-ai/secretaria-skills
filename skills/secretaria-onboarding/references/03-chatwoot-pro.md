@@ -15,20 +15,26 @@ Leia `~/.fazer-ai/onboarding.json` → `chatwootTier`. Eixo **independente** da 
 
 ## Deploy via API do Coolify
 
-`POST http://<VPS_IP>:8000/api/v1/services` com `docker_compose_raw` **base64** (raw → 422 "should be base64 encoded"). `instant_deploy:false` na criação; deploya depois.
-- Faça `docker login harbor.fazer.ai` na VPS (o `dockerLoginCommand`) antes do pull da imagem privada.
-
-## Admin + conta + token (Rails runner, base64-piped via SSH)
-
-Rode dentro do container do Chatwoot: `docker exec -i <container> bundle exec rails runner -` com o script base64-decodificado. Script (senha vem do scratchpad, NUNCA daqui):
-```ruby
-acc = Account.find_or_create_by!(name: 'Clínica Moreira')                      # → id 1
-u = User.find_or_initialize_by(email: '<email-do-admin>')
-u.password = <senha-admin>; u.confirmed_at = Time.current; u.save!
-AccountUser.find_or_create_by!(account_id: acc.id, user_id: u.id).update!(role: 1)  # admin
-tok = u.access_token || u.create_access_token                                   # api_access_token do admin
+O `scripts/coolify.py create-service` lê o compose, faz o **base64** (raw → 422 "should be base64 encoded") e POSTa em `/api/v1/services` com `instant_deploy:false`; depois você deploya:
+```sh
+python3 scripts/coolify.py create-service --base-url http://<VPS_IP>:8000 --token-file coolify.token \
+  --name chatwoot --project-uuid <PROJ_UUID> --server-uuid <SRV_UUID> --environment-name production \
+  --compose-file deploy/chatwoot/docker-compose.coolify.yml   # → {uuid}
+python3 scripts/coolify.py api-post --base-url http://<VPS_IP>:8000 --token-file coolify.token --path /services/<uuid>/start
 ```
-O `api_access_token` resultante é usado como header `api_access_token: <token>` nas chamadas REST do Chatwoot (transitório, nunca persistido).
+- Logue no Harbor com `scripts/harbor-login.py login` **antes** do `start` (o pull da privada precisa do login): roda `docker login --password-stdin` por SSH (secret fora do argv) e protege o `$` do usuário robot. `username`/`secret` vêm do `generate_install_script`; grave o secret num arquivo `0600`:
+```sh
+python3 scripts/harbor-login.py login --ssh root@<VPS_IP> --username '<robot-user>' --secret-file harbor.secret
+```
+
+## Admin + conta + token (Rails runner via SSH)
+
+`scripts/chatwoot-admin.py provision` roda o Rails runner **dentro** do container (base64-piped por SSH, então o nome com acento/espaço e as aspas do script não tocam o shell), idempotente (`find_or_create` de account/user/token). A **senha é gerada no container** (SecureRandom): nenhum segredo entra por argv.
+```sh
+python3 scripts/chatwoot-admin.py provision --ssh root@<VPS_IP> --container <chatwoot-rails-container> \
+  --account-name 'Clínica Moreira' --email <email-do-admin> --out chatwoot-admin.json
+```
+Grava `api_access_token` (+ a senha, se o user nasceu agora) num arquivo `0600`; só metadados são impressos. Esse `api_access_token` vai no header `api-access-token: <token>` (hífen: sobrevive a proxies, ver `deploy-b-portainer.md`) das chamadas REST do Chatwoot **e** no `deployment_connect` da etapa 9 (transitório, nunca persistido em repo/log).
 
 ## FQDN + 503
 

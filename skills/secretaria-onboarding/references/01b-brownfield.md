@@ -19,7 +19,7 @@ sec IMAGES;    docker ps -a --format '{{.Image}}' | sort -u | grep -iE 'coolify|
 PROBE
 ```
 
-> **Tier B (Portainer):** quando a plataforma é Portainer, a sondagem é **via API do Portainer** (`GET /api/stacks`, `GET /api/endpoints/{id}/docker/containers/json`), não `coolify-db`. A lógica é a mesma (fingerprint por imagem + matriz da seção 3); use `scripts/portainer-brownfield.py` (já detecta quem ocupa 80/443 → se há ingress, o Caddy bundled conflita, reusar ou ir de `docker-compose.prod.yml` BYO-proxy). Ver [`deploy-b-portainer.md`](deploy-b-portainer.md) e [`docs/deploy-portainer.md`](../docs/deploy-portainer.md).
+> **Tier B (Portainer):** quando a plataforma é Portainer, a sondagem é **via API do Portainer** (`GET /api/stacks`, `GET /api/endpoints/{id}/docker/containers/json`), não `coolify-db`. A lógica é a mesma (fingerprint por imagem + matriz da seção 3); use `scripts/portainer-brownfield.py` (já detecta quem ocupa 80/443 → se há ingress, o Caddy bundled conflita, reusar ou ir de `docker-compose.prod.yml` BYO-proxy). Ver [`deploy-b-portainer.md`](deploy-b-portainer.md).
 
 ## 2. Ler os sinais
 

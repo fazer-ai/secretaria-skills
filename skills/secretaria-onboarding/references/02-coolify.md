@@ -14,24 +14,27 @@ Real: **o usuário cria** o 1º admin pelo browser em `http://<VPS_IP>:8000` (ga
 
 ## API Access (token) — você faz por SSH, não pela UI
 
-Dois passos, ambos por SSH, **sem o usuário** (validado E2E no Coolify 4.1.2):
+Dois passos, ambos por SSH, **sem o usuário**. Os dois (e toda chamada à API daqui pra frente) saem do `scripts/coolify.py` (Python stdlib, embutido nesta skill): ele base64-pipa o payload por SSH, semeia o `currentTeam`, e **mantém o token Sanctum `<id>|<token>` fora de qualquer shell** (o `|` só vive num arquivo `0600` e no header HTTP). Foi um `|` num comando montado à mão que já derrubou uma run. Rode via Bash com sandbox desligado, como todo ssh/curl (ver `00`).
 
-**1. Habilite a API** — vem **desabilitada** por padrão; sem isto todo request dá `403 {"message":"API is disabled."}`:
+**1. Habilite a API**: vem **desabilitada** por padrão; sem isto todo request dá `403 {"message":"API is disabled."}`:
 ```sh
-docker exec coolify-db psql -U coolify -d coolify -tc "UPDATE instance_settings SET is_api_enabled = true;"
+python3 scripts/coolify.py enable-api --ssh root@<VPS_IP>
 ```
-Pega na hora, sem restart. `allowed_ips` vazio (default) = sem restrição de origem; **não mexa** (o agente acessa de fora).
+Pega na hora, sem restart, idempotente. `allowed_ips` vazio (default) = sem restrição de origem; **não mexa** (o agente acessa de fora).
 
-**2. Gere o token root.** O `createToken` cru falha com `team_id null`, então **semeie a sessão** (`currentTeam`) antes — é o que o snippet faz. O snippet tem aspas: use o base64-pipe da `00`.
+**2. Gere o token root.** O `createToken` cru falha com `team_id null`, então o script **semeia a sessão** (`currentTeam`) antes de gerar, extrai o `<id>|<token>` e grava num arquivo `0600` (ability `*` = root; o segredo **não** é impresso):
 ```sh
-docker exec coolify php artisan tinker --execute='$u = App\Models\User::first(); session(["currentTeam" => $u->teams()->first()]); echo $u->createToken("fazer-ai-onboarding", ["*"])->plainTextToken;'
+python3 scripts/coolify.py token --ssh root@<VPS_IP> --out coolify.token   # arquivo no scratchpad, transitório
 ```
-A saída `<id>|<token>` é o Bearer (ability `*` = root). Guarde transitoriamente (scratchpad), **nunca** em repo/log/commit.
-- Base da API: `http://<VPS_IP>:8000/api/v1`, header `Authorization: Bearer <token>`. Valide: `GET /api/v1/servers` → 200.
+Daí toda chamada autenticada lê o token do arquivo, você **nunca** digita o token num `curl`. Valide a API:
+```sh
+python3 scripts/coolify.py api-get --base-url http://<VPS_IP>:8000 --token-file coolify.token --path /servers   # → 200
+```
+`create-service` (deploy de serviço), `api-post` (qualquer POST autenticado) e `set-fqdn` usam o mesmo `--token-file`. O arquivo é transitório (scratchpad); **nunca** em repo/log/commit.
 
 ## Instance Domain — você seta por SSH (cosmético: NÃO bloqueia o deploy)
 
-Só troca o acesso ao **painel** de `http://<VPS_IP>:8000` para `https://coolify.<seu-dominio>` (TLS). **O deploy não depende disto** (API e serviços rodam pelo IP cru), então é polimento: faça por SSH, sem o usuário, e **não trave** o onboarding se falhar. Exige o A-record `coolify.` (etapa 1). Validado E2E (Coolify 4.1.2):
+Só troca o acesso ao **painel** de `http://<VPS_IP>:8000` para `https://coolify.<seu-dominio>` (TLS). **O deploy não depende disto** (API e serviços rodam pelo IP cru), então é polimento: faça por SSH, sem o usuário, e **não trave** o onboarding se falhar. Exige o A-record `coolify.` (etapa 1):
 ```sh
 docker exec coolify-db psql -U coolify -d coolify -tc "UPDATE instance_settings SET fqdn='https://coolify.<seu-dominio>';"
 docker restart coolify

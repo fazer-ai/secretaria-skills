@@ -4,7 +4,7 @@ Habilita as features **Pro** (Kanban etc.) numa instância Chatwoot **Pro já de
 necessárias e **distintas**:
 
 - A **imagem Pro** (`harbor.fazer.ai/chatwoot/fazer-ai/chatwoot-pro`) traz o **código** (driver de Kanban,
-  Baileys). Sem ela, não há Pro. A edição é escolhida no deploy (ver [`../deploy/chatwoot/README.md`](../deploy/chatwoot/README.md)).
+  Baileys). Sem ela, não há Pro. A edição é escolhida no deploy (ver [`03-chatwoot-pro.md`](03-chatwoot-pro.md)).
 - A **assinatura no hub** dá a habilitação em runtime: **imagem Pro sem assinatura ativa = features
   travadas.** Por isso existe o passo do Refresh (não é restart de container).
 
@@ -32,19 +32,11 @@ A edição é decidida **no deploy** pelo marcador do CLI `~/.fazer-ai/onboardin
    a instância (o subdomínio/host); confirme com `get_instance`.
 2. **Atacha a licença.** `attach_license { license_id: "<licença CHATWOOT>", instance_id: "<id>" }`
    (dry-run, depois apply). Uma feature por instância; os tipos têm que bater.
-3. **Refresh na instância** (o botão "Refresh" do super admin, via rails runner no container do Chatwoot):
+3. **Refresh + verify na instância** (o botão "Refresh" do super admin) via `scripts/chatwoot-admin.py`, que roda o job e reporta os configs da assinatura (NÃO despeja valores crus que poderiam ser segredo):
    ```sh
-   docker exec -i <container-rails-do-chatwoot> bundle exec rails runner \
-     'Internal::CheckNewVersionsJob.perform_now(jitter_applied: true)'
+   python3 scripts/chatwoot-admin.py refresh-subscription --ssh root@<VPS_IP> --container <chatwoot-rails-container>
    ```
-   **`jitter_applied: true` é obrigatório.** Sem ele, o job só se reagenda (janela determinística de até 30
-   min) e o sync da assinatura nem roda.
-4. **Verifique** (mesmo runner):
-   ```ruby
-   InstallationConfig.find_by(name: 'FAZER_AI_SUBSCRIPTION_SYNC_ERROR_MESSAGE')&.value  # nil = ok
-   InstallationConfig.find_by(name: 'FAZER_AI_SUBSCRIPTION_VERIFIED_AT')&.value         # timestamp recente = ok
-   ```
-   No super admin (`/super_admin/settings`), "fazer.ai Subscription" fica ativa e o Kanban aparece.
+   **`jitter_applied: true` é obrigatório** (o script já passa). Sem ele, o job só se reagenda (janela determinística de até 30 min) e o sync nem roda. A saída traz `config_keys` (deve listar os `FAZER_AI_SUBSCRIPTION_*`) e `diagnostics` (`SYNC_ERROR_MESSAGE` nil = ok; `VERIFIED_AT` recente = ok). No super admin (`/super_admin/settings`), "fazer.ai Subscription" fica ativa e o Kanban aparece.
 
 ## Erros comuns
 

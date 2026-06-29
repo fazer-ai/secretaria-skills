@@ -26,7 +26,7 @@ Leva uma VPS de "nada" até "agente de atendimento de IA rodando, testado e plug
 
 ## A jornada (ordem importa)
 
-Abra a referência da etapa **antes** de executá-la (carga sob demanda). O fluxo é **0 → 1 → 1b → 1c**, então o **deploy do tier** escolhido em 1c (Tier A = etapas 2-5; B/C = o doc do tier), convergindo na **espinha 6-10** (igual em todos). Status: **A e B validados E2E**; **C (compose genérico) estruturado a partir dos artefatos, ainda não rodado E2E** (ver [`references/01c-pick-tier.md`](references/01c-pick-tier.md)).
+Abra a referência da etapa **antes** de executá-la (carga sob demanda). O fluxo é **0 → 1 → 1b → 1c**, então o **deploy do tier** escolhido em 1c (Tier A = etapas 2-5; B/C = o doc do tier), convergindo na **espinha 6-10** (igual em todos). As trilhas A (Coolify) e B (Portainer) são as maduras; a C (compose genérico) é mais nova, então trate-a como primeira run guiada (ver [`references/01c-pick-tier.md`](references/01c-pick-tier.md)).
 
 | # | Etapa | Referência |
 |---|-------|-----------|
@@ -48,7 +48,7 @@ Abra a referência da etapa **antes** de executá-la (carga sob demanda). O flux
 
 **O deploy (etapa 2) ramifica por tier.** As linhas 2-5 acima são a trilha do **Tier A (Coolify)**. Para os outros, escolha em 1c, **substitua 2-5** pelo doc único do tier e convirja direto no **6** (todos entregam o mesmo [contrato](references/01c-pick-tier.md)):
 
-- **Tier B** (Portainer): [`references/deploy-b-portainer.md`](references/deploy-b-portainer.md) → [`docs/deploy-portainer.md`](docs/deploy-portainer.md)
+- **Tier B** (Portainer): [`references/deploy-b-portainer.md`](references/deploy-b-portainer.md)
 - **Tier C** (compose genérico, VM crua ou qualquer painel): [`references/deploy-c-compose.md`](references/deploy-c-compose.md)
 
 ## Gates de conta (real vs teste)
@@ -61,7 +61,7 @@ No **produto real**, o usuário cria o 1º admin de cada ferramenta no browser (
 - Migração/atualização de serviços incompatíveis (a etapa 1b **detecta e sinaliza**; a migração em si é decisão do usuário).
 - Caminho manual (sem IA) e adapters de agente não-Claude-Code (Codex/Hermes).
 
-Os três tiers de deploy (A/B/C) estão **dentro** do escopo (a etapa 1c roteia; A e B validados E2E, C ainda não). Caminhos mais amplos estão em `docs/onboarding/plan.md`.
+Os três tiers de deploy (A/B/C) estão **dentro** do escopo (a etapa 1c roteia).
 
 ## Critério de aceite (E2E, objetivo final)
 
