@@ -3,7 +3,7 @@
 ## MCPs (ligar ANTES de começar; reiniciar a sessão cedo)
 
 - **Hostinger** (3 servers via npx, stdio, `HOSTINGER_API_TOKEN`): `hostinger-dns`, `hostinger-vps`, `hostinger-domains`. DNS é o uso central (etapa 1: A-records); VPS/domains pra descoberta/gestão. **Só quando a infra é Hostinger**: em outro provider não há esses MCPs (ver "Outro provider" na `01-vps-dns-ssh.md`).
-- **Hub `app-fazer-ai`** (OAuth; escopos `mcp:read`+`write`+`admin`): licenças/instâncias/registry credential do Chatwoot Pro. Use a licença do Chatwoot Pro e a registry credential da conta do usuário (`<LICENSE_ID>` / `<REGISTRY_CRED_ID>`); os limites de uso estão em `guardrails.md`.
+- **Hub `app-fazer-ai`** — **não** é conectado como MCP na sua sessão. As ops do hub que o onboarding precisa (registry credential do Harbor, cadastro/atacha da instância na licença) saem pelo **proxy do CLI**: `bunx @fazer-ai/secretaria hub <op>` (usa o OAuth do `~/.fazer-ai/oauth.json` do bootstrap; dry-run por padrão, `--apply` pra escrever). Você ganha só essas ops, sem token `mcp:admin` na sessão. Detalhe em `03-chatwoot-pro.md` / `chatwoot-hub-register.md` / `04-secretaria-v4.md`; limites em `guardrails.md`.
 - **v4** (OAuth): conectado SÓ na etapa 6, depois do `/setup` (antes disso a instância nem existe).
 - Depois de adicionar os MCPs, **reinicie a sessão do harness** pra eles ficarem disponíveis na execução.
 
@@ -15,7 +15,7 @@ O CLI `@fazer-ai/secretaria` roda ANTES do handoff e deixa marcadores que você 
 - **`hostinger.json`** — `{ token }` da API Hostinger (quando o provider é Hostinger); o CLI também já o injeta nos MCPs.
 - **`preferences.json`** — defaults de UX do CLI (agente/provider/última licença); informativo, não load-bearing.
 
-Marcador ausente (fallback por token, ou outro ponto de entrada) → decida pelo hub (`list_licenses`/`whoami`).
+Marcador ausente (fallback por token, ou outro ponto de entrada) → decida pelo hub via proxy: `bunx @fazer-ai/secretaria hub licenses` / `hub whoami`.
 
 ## Acesso (fornecido pelo usuário)
 

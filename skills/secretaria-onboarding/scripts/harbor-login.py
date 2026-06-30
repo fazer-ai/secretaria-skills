@@ -8,6 +8,7 @@
 import argparse
 import base64
 import json
+import os
 import shlex
 import subprocess
 import sys
@@ -21,6 +22,19 @@ def out(obj, code=0):
 
 def fail(msg, **extra):
     out({"ok": False, "error": msg, **extra}, code=1)
+
+
+def split_ssh_opts(opts, _nt=None):
+    # POSIX shlex eats backslashes, mangling a Windows key path ("-i C:\Users\me\.ssh\key" ->
+    # "C:Usersme.sshkey"). On Windows, tokenize without escape processing and strip our own quotes so the
+    # backslashes survive. _nt is injectable for tests.
+    nt = (os.name == "nt") if _nt is None else _nt
+    if not opts:
+        return []
+    if nt:
+        toks = shlex.split(opts, posix=False)
+        return [t[1:-1] if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'" else t for t in toks]
+    return shlex.split(opts)
 
 
 def cmd_login(args):
@@ -37,8 +51,7 @@ def cmd_login(args):
         f"U=$(echo '{user_b64}' | base64 -d); "
         f"echo '{secret_b64}' | base64 -d | docker login -u \"$U\" --password-stdin {args.registry}"
     )
-    extra = shlex.split(args.ssh_opts) if args.ssh_opts else []
-    argv = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", *extra, args.ssh, remote]
+    argv = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", *split_ssh_opts(args.ssh_opts), args.ssh, remote]
     try:
         proc = subprocess.run(argv, capture_output=True, text=True, timeout=args.timeout)
     except FileNotFoundError:

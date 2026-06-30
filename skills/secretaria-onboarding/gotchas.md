@@ -58,7 +58,7 @@ A edição **Pro** da Secretária V4 (`secretariaEdition: "pro"`, marcador) usa 
 
 ### Chatwoot OSS não faz `docker login` nem usa Baileys
 
-`chatwootTier: "community"` (OSS) usa a imagem pública `ghcr.io/fazer-ai/chatwoot` (nosso fork), **sem** `docker login` no Harbor e **sem** o `baileys-api` (`COMPOSE_PROFILES` vazio). Só o `pro` faz `docker login` no Harbor + imagem privada `chatwoot-pro` + Baileys. **Não** rode `generate_install_script`/`docker login` no caminho OSS (não há licença, e o pull público não precisa dela).
+`chatwootTier: "community"` (OSS) usa a imagem pública `ghcr.io/fazer-ai/chatwoot` (nosso fork), **sem** `docker login` no Harbor e **sem** o `baileys-api` (`COMPOSE_PROFILES` vazio). Só o `pro` faz `docker login` no Harbor + imagem privada `chatwoot-pro` + Baileys. **Não** rode `docker login` nem provisione credencial do Harbor no caminho OSS (não há licença, e o pull público não precisa dela).
 
 ## Langfuse
 
@@ -109,4 +109,4 @@ A máquina do operador pode ter **só `bun`** (sem `node` no PATH) — `node hel
 - **TTS:** precisa de chave ElevenLabs real.
 - **Visão:** precisa de chave Gemini válida.
 - **WhatsApp físico:** opcional; exige um número que o usuário controle. A integração Chatwoot→v4 já é provada headless via Inbox API (etapa 10); o físico só confirma o transporte real.
-- **Kanban:** condicional à licença, **não** "opcional". Com licença disponível (CLI/`list_licenses`), habilitar é **happy-path** (licenciar no hub + Refresh; ver `references/chatwoot-hub-register.md`); imagem Pro sozinha não basta. Sem licença → OSS, sem Kanban.
+- **Kanban:** condicional à licença, **não** "opcional". Com licença disponível (CLI/`hub licenses`), habilitar é **happy-path** (licenciar no hub + Refresh; ver `references/chatwoot-hub-register.md`); imagem Pro sozinha não basta. Sem licença → OSS, sem Kanban.

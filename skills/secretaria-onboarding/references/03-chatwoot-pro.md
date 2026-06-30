@@ -2,16 +2,20 @@
 
 ## Primeiro: leia o marcador e ramifique (Pro vs OSS)
 
-Leia `~/.fazer-ai/onboarding.json` → `chatwootTier`. Eixo **independente** da edição da Secretária V4 (`secretariaEdition`, etapa 4). Marcador ausente → fallback pelo hub (`list_licenses`): licença CHATWOOT disponível → Pro; senão OSS.
+Leia `~/.fazer-ai/onboarding.json` → `chatwootTier`. Eixo **independente** da edição da Secretária V4 (`secretariaEdition`, etapa 4). Marcador ausente → fallback pelo hub (`bunx @fazer-ai/secretaria hub licenses`): licença CHATWOOT disponível → Pro; senão OSS.
 
-- **`community` (OSS)** → imagem **pública** `ghcr.io/fazer-ai/chatwoot:latest` (nosso fork), `COMPOSE_PROFILES` vazio (sem `baileys-api`). **NÃO** rode `docker login` nem `generate_install_script` (não há licença e o pull é público). Deploy pelo compose genérico (`deploy/chatwoot/`, ver `deploy/chatwoot/README.md`); no Coolify, setar `CHATWOOT_IMAGE=ghcr.io/fazer-ai/chatwoot:latest` no `docker-compose.coolify.yml` e **remover** o `baileys-api`. **Pule a etapa 9b** (licenciar). O resto deste doc é **só Pro**.
+- **`community` (OSS)** → imagem **pública** `ghcr.io/fazer-ai/chatwoot:latest` (nosso fork), `COMPOSE_PROFILES` vazio (sem `baileys-api`). **NÃO** rode `docker login` nem provisione credencial do Harbor (não há licença e o pull é público). Deploy pelo compose genérico (`deploy/chatwoot/`, ver `deploy/chatwoot/README.md`); no Coolify, setar `CHATWOOT_IMAGE=ghcr.io/fazer-ai/chatwoot:latest` no `docker-compose.coolify.yml` e **remover** o `baileys-api`. **Pule a etapa 9b** (licenciar). O resto deste doc é **só Pro**.
 - **`pro`** → siga abaixo (Harbor + Coolify API + `docker login` + etapa 9b).
 
-## Imagem privada (Harbor): use a licença/cred do usuário
+## Imagem privada (Harbor): credencial per-user via proxy do CLI
 
 `harbor.fazer.ai/chatwoot/fazer-ai/chatwoot-pro:latest`.
-- Hub MCP: `generate_install_script` na licença do Chatwoot Pro (`<LICENSE_ID>`) → retorna `curlCommand` + `dockerLoginCommand` (login no Harbor com a robot account). Aplicar (`dry_run:false`) só com OK do usuário. **Nunca** logar o secret do Harbor.
-- Dele se **extrai o compose** (heredoc `COMPOSE_EOF`).
+- Credencial do Harbor pelo **proxy do hub no CLI** (não há hub MCP na sessão do agente; o CLI tem o OAuth do bootstrap):
+  ```sh
+  bunx @fazer-ai/secretaria hub registry-credential --apply --out harbor.secret
+  ```
+  Robot **per-user** (a MESMA cred cobre Chatwoot Pro e Secretária Pro), idempotente; grava o secret em `harbor.secret` (`0600`) e imprime só o `username` — o secret **nunca** sai no output. **Nunca** logar o secret.
+- O compose é o vendorado `deploy/chatwoot/docker-compose.coolify.yml` (não precisa extrair do hub).
 
 ## Deploy via API do Coolify
 
@@ -22,7 +26,7 @@ python3 scripts/coolify.py create-service --base-url http://<VPS_IP>:8000 --toke
   --compose-file deploy/chatwoot/docker-compose.coolify.yml   # → {uuid}
 python3 scripts/coolify.py api-post --base-url http://<VPS_IP>:8000 --token-file coolify.token --path /services/<uuid>/start
 ```
-- Logue no Harbor com `scripts/harbor-login.py login` **antes** do `start` (o pull da privada precisa do login): roda `docker login --password-stdin` por SSH (secret fora do argv) e protege o `$` do usuário robot. `username`/`secret` vêm do `generate_install_script`; grave o secret num arquivo `0600`:
+- Logue no Harbor com `scripts/harbor-login.py login` **antes** do `start` (o pull da privada precisa do login): roda `docker login --password-stdin` por SSH (secret fora do argv) e protege o `$` do usuário robot. O `username` vem do `hub registry-credential` (acima); o secret está em `harbor.secret` (`0600`):
 ```sh
 python3 scripts/harbor-login.py login --ssh root@<VPS_IP> --username '<robot-user>' --secret-file harbor.secret
 ```

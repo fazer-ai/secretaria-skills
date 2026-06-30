@@ -12,11 +12,12 @@ Valem em qualquer execução desta skill. Cruzar qualquer uma é **parar e pergu
 
 - **Nunca** modificar produção a menos que o usuário peça aquela mudança específica. Autorização a um objetivo não é autorização para tocar produção nem para escolher o método.
 - **Nunca** editar o DB de produção direto para mudar estado de aplicação: usar a UI/API da própria app. (Durante o provisionamento inicial, antes da app estar no ar, mexer no DB/console via `psql`/Rails runner é aceitável e transitório; uma vez em produção, use a UI/API.)
-- Toda **write tool de MCP é dry-run por padrão**. Aplicar (`dry_run:false`) só com OK explícito do usuário para aquela ação.
+- **Writes do hub** (via proxy `bunx @fazer-ai/secretaria hub …`) e **write tools de MCP** são **dry-run por padrão**. Aplicar (`--apply` / `dry_run:false`) só com OK explícito do usuário para aquela ação.
 
 ## Segredos
 
 - **Nenhum segredo em repo, log, commit ou arquivo plano.** Cada segredo vive no destino final: env do serviço no Coolify / DB do Chatwoot / **vault da v4** / store de MCP do harness (o token da v4 fica no harness do agente).
+- **Nunca `cat`/imprima arquivos de credencial locais** do CLI/agente: `~/.fazer-ai/oauth.json` (refresh token do hub), `*.token`, `*.keys.json`, `/root/.docker/config.json`. Para checar presença, teste só a existência (`Test-Path` / `[ -f … ]`) ou um `grep -q` **sem** imprimir o conteúdo; despejar o arquivo no output coloca o segredo no transcript (que persiste em disco). Mesma regra dos logs: redija (`sed -E 's/(token=|password=|secret=)[^ ]+/\1[REDACTED]/'`) antes de mostrar.
 - Segredos de infra usados pelo agente são **buscados transitoriamente** no momento do uso (token do Chatwoot via Rails runner, senha do Coolify-db via env do container), nunca persistidos em disco.
 - Credenciais do **usuário** (OpenAI/ElevenLabs/Gemini/Asaas) entram como **pending + deeplink**: o usuário preenche no console; nunca passam pelo agente.
 

@@ -30,8 +30,9 @@ Caddyfile a partir do env no boot (`CADDY_DOMAIN` → o app; `PORTAINER_DOMAIN` 
   `portainer.<domínio>` → o IP do VPS. O ACME valida contra eles, então têm que resolver **antes** do deploy.
 - **Credenciais de registry** pras imagens privadas (configure uma vez no Portainer, passe `Registries:[id]`):
   - `ghcr.io` pra `ghcr.io/fazer-ai/secretaria-v4` (e pgvector/baileys). Token do GitHub com `read:packages`.
-  - `harbor.fazer.ai` pro Chatwoot **Pro**: a registry credential da licença (no hub, `generate_install_script`
-    revela). Chatwoot OSS não precisa de registry privado.
+  - `harbor.fazer.ai` pro Chatwoot **Pro** (e Secretária V4 Pro): a registry credential **per-user**, provisionada
+    pelo proxy do CLI (`bunx @fazer-ai/secretaria hub registry-credential --apply --out harbor.secret`; imprime o
+    `username`, grava o secret em `harbor.secret`). Chatwoot OSS não precisa de registry privado.
 
 ## 1. Instalar o Portainer (headless)
 

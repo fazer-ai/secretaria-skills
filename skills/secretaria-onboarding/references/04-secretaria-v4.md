@@ -5,7 +5,7 @@
 Leia `~/.fazer-ai/onboarding.json` → `secretariaEdition` (`free` | `pro`; ausente = `free`). É a escolha **explícita** do CLI; respeite-a. Eixo **independente** do `chatwootTier` (etapa 3).
 
 - **`free`** → imagem **pública** (default do compose). **Sem** `docker login`, não seta `SECRETARIA_V4_IMAGE`. (Hoje o default é o placeholder `ghcr.io/fazer-ai/secretaria-free:latest` — a imagem pública Free ainda não foi publicada.)
-- **`pro`** → imagem **privada** no Harbor: `harbor.fazer.ai/secretaria/fazer-ai/secretaria-v4:latest`. Provisione a credencial **per-user** no hub MCP `app-fazer-ai` (`create_registry_credential`, **sem** `license_id`; dry-run → apply com OK), logue com `scripts/harbor-login.py login` (secret via `--secret-file`, stdin; protege o `$` do robot), e setar `SECRETARIA_V4_IMAGE` pra esse path. **Nunca** logar o secret.
+- **`pro`** → imagem **privada** no Harbor: `harbor.fazer.ai/secretaria/fazer-ai/secretaria-v4:latest`. Provisione a credencial **per-user** pelo **proxy do CLI** (`bunx @fazer-ai/secretaria hub registry-credential --apply --out harbor.secret` — robot per-user, grava o secret `0600` e imprime só o `username`), logue com `scripts/harbor-login.py login` (secret via `--secret-file harbor.secret`; protege o `$` do robot), e setar `SECRETARIA_V4_IMAGE` pra esse path. **Nunca** logar o secret.
   - **Reuso (per-user):** se o Chatwoot também for Pro (etapa 3), é o **mesmo** `docker login`, não logar duas vezes.
   - **Tier A (Coolify):** setar a env `SECRETARIA_V4_IMAGE` no serviço + registrar a Harbor registry credential no Coolify (igual ao Chatwoot Pro).
   - **Tier B/C (compose):** `export SECRETARIA_V4_IMAGE=<imagem>` (ou no `.env`) antes do `docker compose up`.

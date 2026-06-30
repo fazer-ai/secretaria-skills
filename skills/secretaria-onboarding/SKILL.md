@@ -11,7 +11,7 @@ Leva uma VPS de "nada" até "agente de atendimento de IA rodando, testado e plug
 
 1. **Leia [`guardrails.md`](guardrails.md) inteiro.** Tem fronteiras duras (VPS única de teste, licença única do hub, MCP dry-run, nada de produção, nada de segredo em log). Cruzar qualquer uma é parar e perguntar.
 2. **Leia [`gotchas.md`](gotchas.md).** São as armadilhas conhecidas que, se ignoradas, fazem você redescobrir do jeito difícil (FQDN que não dirige o Traefik, embedding por-tenant, Langfuse sem blob storage, persistência de branding etc.).
-3. Confira pré-requisitos em [`references/00-prereqs-and-access.md`](references/00-prereqs-and-access.md): MCPs ligados (Hostinger ×3 + hub `app-fazer-ai`), acesso SSH, e o contrato do ambiente de teste.
+3. Confira pré-requisitos em [`references/00-prereqs-and-access.md`](references/00-prereqs-and-access.md): MCPs ligados (Hostinger ×3; o hub `app-fazer-ai` **não** é MCP da sessão, suas ops saem pelo proxy `bunx @fazer-ai/secretaria hub …`), acesso SSH, e o contrato do ambiente de teste.
 
 ## Como operar (princípios)
 
@@ -22,7 +22,7 @@ Leva uma VPS de "nada" até "agente de atendimento de IA rodando, testado e plug
 - **MCP-first** para tudo que é config da v4 (import, vault, plugar Chatwoot). SSH/psql/Rails runner só para infra (orquestrador, Chatwoot internals) e de forma **transitória**.
 - **Idempotência / brownfield:** a VPS pode já ter um orquestrador (Coolify, Portainer, ou outro painel) e/ou outros serviços, em qualquer combinação. Antes de instalar, **sonde e decida por serviço** (etapa 1b, [`references/01b-brownfield.md`](references/01b-brownfield.md)): reaproveite o que está saudável, **nunca destrua** dados do usuário.
 - **Nomes nunca hardcoded:** o nome de exibição/projeto vem do usuário (passo 1) e alimenta o projeto do orquestrador, a org/projeto do Langfuse e o tenant da v4 (o `companyName` do `/setup`).
-- **Dry-run primeiro:** toda write tool de MCP previewa; só aplica com `dry_run:false` após OK.
+- **Dry-run primeiro:** writes do hub (proxy `hub …`) e write tools de MCP previewam; só aplicam com `--apply`/`dry_run:false` após OK.
 
 ## A jornada (ordem importa)
 
@@ -42,7 +42,7 @@ Abra a referência da etapa **antes** de executá-la (carga sob demanda). O flux
 | 8 | **Import do agente** (`agent_import`; padrão **Maria**/Clínica Moreira, vendorado em `samples/agents/maria-clinica-moreira.json`) + embedding por-tenant + reindex/retry da KB | [`references/08-agent-import.md`](references/08-agent-import.md) |
 | 8b | **Pós-import (gate)**: resolver avisos (KB→READY + grounding; STT/TTS/visão) + features opcionais (voz, Google OAuth) | [`references/agent-features.md`](references/agent-features.md) |
 | 9 | Plugar Chatwoot na v4 (`deployment_connect` → `set_accounts` → `inbox_bind`) | [`references/09-chatwoot-bind.md`](references/09-chatwoot-bind.md) |
-| 9b | **Licenciar Chatwoot no hub** (Kanban/Pro): com licença disponível (CLI/`list_licenses`) é **happy-path** (`create_instance → attach_license → Refresh`); sem licença → OSS sem Kanban | [`references/chatwoot-hub-register.md`](references/chatwoot-hub-register.md) |
+| 9b | **Licenciar Chatwoot no hub** (Kanban/Pro): com licença disponível (CLI/`hub licenses`) é **happy-path** (`hub create-instance → hub attach-license → Refresh`); sem licença → OSS sem Kanban | [`references/chatwoot-hub-register.md`](references/chatwoot-hub-register.md) |
 | 10 | Validar **E2E** (playground + grounding → **integração via Inbox API** → traces; WhatsApp real opcional) | [`references/10-validate-e2e.md`](references/10-validate-e2e.md) |
 
 **O deploy (etapa 2) ramifica por tier.** As linhas 2-5 acima são a trilha do **Tier A (Coolify)**. Para os outros, escolha em 1c, **substitua 2-5** pelo doc único do tier e convirja direto no **6** (todos entregam o mesmo [contrato](references/01c-pick-tier.md)):

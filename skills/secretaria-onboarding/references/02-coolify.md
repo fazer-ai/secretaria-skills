@@ -12,6 +12,12 @@ Para um teste do zero, reinstale: wipe do Docker + `/data/coolify` + instalador 
 
 Real: **o usuário cria** o 1º admin pelo browser em `http://<VPS_IP>:8000` (gate de conta). Teste: você cria. **Esse é o único passo manual do Tier A.** Depois do admin, **NÃO peça mais nada ao usuário** — o token e o Instance Domain você faz por SSH (abaixo). **Nunca** mande o usuário abrir "Settings → …".
 
+Em vez de pedir "responda quando criar", **aguarde** o admin aparecer (poll no banco via psql, não trava o operador):
+```sh
+python3 scripts/coolify.py wait-admin --ssh root@<VPS_IP>
+```
+`ok:true` (com `users>0`) → siga pro token. `ok:false` (timeout) → aí pergunte ao operador. Brownfield: se já existe admin, detecta na 1ª tentativa e segue. (O detector é psql, não Tinker — não dá o falso "sem admin" que o Tinker dava ao ecoar o payload.)
+
 ## API Access (token) — você faz por SSH, não pela UI
 
 Dois passos, ambos por SSH, **sem o usuário**. Os dois (e toda chamada à API daqui pra frente) saem do `scripts/coolify.py` (Python stdlib, embutido nesta skill): ele base64-pipa o payload por SSH, semeia o `currentTeam`, e **mantém o token Sanctum `<id>|<token>` fora de qualquer shell** (o `|` só vive num arquivo `0600` e no header HTTP). Foi um `|` num comando montado à mão que já derrubou uma run. Rode via Bash com sandbox desligado, como todo ssh/curl (ver `00`).
@@ -30,7 +36,7 @@ Daí toda chamada autenticada lê o token do arquivo, você **nunca** digita o t
 ```sh
 python3 scripts/coolify.py api-get --base-url http://<VPS_IP>:8000 --token-file coolify.token --path /servers   # → 200
 ```
-`create-service` (deploy de serviço), `api-post` (qualquer POST autenticado) e `set-fqdn` usam o mesmo `--token-file`. O arquivo é transitório (scratchpad); **nunca** em repo/log/commit.
+`create-service` (deploy de serviço), `api-post` (qualquer POST autenticado) e `set-fqdn` usam o mesmo `--token-file`. O arquivo é transitório (scratchpad); **nunca** em repo/log/commit. **Windows/PowerShell:** no `api-post`, prefira `--json-file` a `--json-stdin` — o pipe do PowerShell manda o stdin em UTF-16 e quebra o JSON (o helper agora tolera BOM/UTF-16, mas `--json-file` é determinístico).
 
 ## Instance Domain — você seta por SSH (cosmético: NÃO bloqueia o deploy)
 
@@ -59,7 +65,11 @@ Crie (ou reaproveite) um projeto com o **nome de exibição do usuário** (ex.: 
 
 Imagens **Pro** (Chatwoot `chatwoot-pro`; Secretária V4 no projeto `secretaria`) são privadas no Harbor: o Coolify precisa da credencial registrada **antes** de puxar, senão o deploy falha (pull denied / 401). Só no caminho Pro:
 
-1. Pegue a credencial **per-user** no hub MCP `app-fazer-ai` (`create_registry_credential`, **sem** `license_id`; dry-run → apply com OK).
-2. Registre no Coolify (Servers → Registries, ou via API) apontando pra `harbor.fazer.ai` com o `username`/`secret`. **Nunca** logue o secret.
+1. Provisione a credencial **per-user** pelo **proxy do hub no CLI** (não há hub MCP na sessão; o CLI tem o OAuth do bootstrap):
+   ```sh
+   bunx @fazer-ai/secretaria hub registry-credential --apply --out harbor.secret
+   ```
+   Grava o secret em `harbor.secret` (`0600`) e imprime só `username` + caminho (o secret **nunca** sai no output). Idempotente (garante o robot per-user, sem rotação).
+2. Registre no Coolify (Servers → Registries, ou via API) apontando pra `harbor.fazer.ai` com o `username` (do passo 1) e o secret de `harbor.secret`. **Nunca** logue o secret.
 
 No caminho **OSS** (imagem pública), pule isto inteiro.

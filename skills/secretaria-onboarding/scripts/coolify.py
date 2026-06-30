@@ -4,6 +4,7 @@
 #   token           mint a root API token over SSH (artisan tinker; seeds currentTeam) -> 0600 file
 #   enable-api      flip is_api_enabled=true (psql over SSH); the API is OFF by default (403 otherwise)
 #   list-apps       SELECT id,name,fqdn FROM service_applications (psql over SSH) -> JSON
+#   wait-admin      poll the DB until the first admin exists (psql; replaces "tell me when done")
 #   set-fqdn        UPDATE service_applications.fqdn by id (psql over SSH); the env SERVICE_FQDN_* does NOT
 #                   drive Traefik, so this DB write is the real fix for the 503/cert-000 gotcha
 #   api-get         authenticated GET  against /api/v1 (token read from --token-file, never argv/env)
@@ -19,7 +20,9 @@
 import argparse
 import base64
 import json
+import os
 import re
+import secrets
 import shlex
 import subprocess
 import sys
@@ -33,11 +36,16 @@ FQDN_RE = re.compile(r"^https?://[A-Za-z0-9.\-:/]+$")
 SANCTUM_RE = re.compile(r"^\d+\|[A-Za-z0-9]{20,}$")
 
 # The whole point: the decoded payload (with its quotes / "$" / "|") never reaches the remote shell.
+# `php artisan tinker` (PsySH) ECHOES the piped source back on stdout, so any literal sentinel in this
+# text (the old "ERR_NO_USER" / "TOKEN_START") appears in the output even when it never executed — which
+# made `token` falsely report "no admin" on a Coolify that HAD one. Fix: the boundary marker `$b` is the
+# two nonce halves (__NB1__/__NB2__) concatenated AT RUNTIME, so the contiguous nonce can only show up in
+# what actually ran, never in the echoed source. The Python side scans for that contiguous nonce.
 PHP_TOKEN = (
-    r'''$u = App\Models\User::first(); $t = $u ? $u->teams()->first() : null; '''
-    r'''if ($u) { session(["currentTeam" => $t]); '''
-    r'''echo "TOKEN_START".$u->createToken("__NAME__", ["*"])->plainTextToken."TOKEN_END"; } '''
-    r'''else { echo "ERR_NO_USER"; }'''
+    r'''$b = "__NB1__"."__NB2__"; $u = App\Models\User::first(); '''
+    r'''if ($u) { $t = $u->teams()->first(); if ($t) { session(["currentTeam" => $t]); } '''
+    r'''echo $b."T".$u->createToken("__NAME__", ["*"])->plainTextToken.$b; } '''
+    r'''else { echo $b."NOUSER"; }'''
 )
 SQL_ENABLE_API = "UPDATE instance_settings SET is_api_enabled = true;"
 SQL_LIST_APPS = (
@@ -56,9 +64,21 @@ def fail(msg, **extra):
     out({"ok": False, "error": msg, **extra}, code=1)
 
 
+def split_ssh_opts(opts, _nt=None):
+    # POSIX shlex eats backslashes, so a Windows key path ("-i C:\Users\me\.ssh\key") would arrive as
+    # "C:Usersme.sshkey" (a real onboarding failure). On Windows, tokenize WITHOUT escape processing and
+    # strip the surrounding quotes ourselves so backslashes survive. _nt is injectable for tests.
+    nt = (os.name == "nt") if _nt is None else _nt
+    if not opts:
+        return []
+    if nt:
+        toks = shlex.split(opts, posix=False)
+        return [t[1:-1] if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'" else t for t in toks]
+    return shlex.split(opts)
+
+
 def ssh_argv(dest, ssh_opts):
-    extra = shlex.split(ssh_opts) if ssh_opts else []
-    return ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", *extra, dest]
+    return ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", *split_ssh_opts(ssh_opts), dest]
 
 
 def b64_pipe(payload, target):
@@ -128,25 +148,44 @@ def parse_json(raw):
         return raw
 
 
+def extract_sanctum_token(combined, nonce):
+    # The token is bracketed by the contiguous runtime nonce: <nonce>T<id>|<secret><nonce>. That contiguous
+    # form exists ONLY in executed output (the source has the nonce split as "n1"."n2"), so a PsySH echo of
+    # the source can't produce a false match.
+    m = re.search(re.escape(nonce) + r"T(\d+\|[A-Za-z0-9]{20,})" + re.escape(nonce), combined)
+    return m.group(1) if m else None
+
+
+def saw_no_user(combined, nonce):
+    return (nonce + "NOUSER") in combined
+
+
 def cmd_token(args):
     require_container(args.container)
     if not re.match(r"^[A-Za-z0-9_-]+$", args.token_name):
         fail("--token-name must match [A-Za-z0-9_-]+")
-    php = PHP_TOKEN.replace("__NAME__", args.token_name)
+    nonce = secrets.token_hex(8)
+    half = len(nonce) // 2
+    php = (
+        PHP_TOKEN.replace("__NB1__", nonce[:half])
+        .replace("__NB2__", nonce[half:])
+        .replace("__NAME__", args.token_name)
+    )
     target = f"docker exec -i {args.container} php artisan tinker"
     proc = run_ssh(args.ssh, args.ssh_opts, b64_pipe(php, target), args.timeout)
     combined = (proc.stdout or "") + (proc.stderr or "")
-    if "ERR_NO_USER" in combined:
-        fail("Coolify has no user yet — create the first admin before minting a token")
-    match = re.search(r"TOKEN_START(.+?)TOKEN_END", combined, re.S)
-    if not match:
+    # Extract the token FIRST: a real Sanctum token outranks any "no user" signal, so a stray echo can
+    # never override an actually-minted token.
+    token = extract_sanctum_token(combined, nonce)
+    if not token:
+        if saw_no_user(combined, nonce):
+            fail("Coolify has no user yet — create the first admin (browser) before minting a token")
         fail(
             "could not find a token in tinker output (admin created? did artisan run?)",
             exit_code=proc.returncode,
             stdout=(proc.stdout or "")[-400:],
             stderr=(proc.stderr or "")[-400:],
         )
-    token = match.group(1).strip()
     if not SANCTUM_RE.match(token):
         fail("extracted value does not look like a Sanctum token")
     dest = Path(args.out)
@@ -184,6 +223,32 @@ def cmd_list_apps(args):
     except ValueError:
         fail("could not parse psql JSON output", raw=raw[-400:])
     out({"ok": True, "count": len(rows), "apps": rows})
+
+
+def cmd_wait_admin(args):
+    # Poll the Coolify DB for a registered admin so the agent detects "done" itself instead of asking the
+    # operator to come back and confirm. psql (not tinker) — robust, no PsySH echo to misread.
+    sql = "SELECT count(*) FROM users;"
+    target = psql_target(args) + " -tA"
+    last_err = None
+    for i in range(args.attempts):
+        proc = run_ssh(args.ssh, args.ssh_opts, b64_pipe(sql, target), args.timeout)
+        if proc.returncode == 0:
+            for line in (proc.stdout or "").splitlines():
+                line = line.strip()
+                if line.isdigit():
+                    if int(line) > 0:
+                        out({"ok": True, "users": int(line), "attempt": i + 1})
+                    break
+        else:
+            last_err = (proc.stderr or "")[-200:]
+        if i < args.attempts - 1:
+            time.sleep(args.interval)
+    out(
+        {"ok": False, "users": 0, "attempts": args.attempts, "last_error": last_err,
+         "note": "no admin yet — create the first admin in the browser, then it gets detected"},
+        code=1,
+    )
 
 
 def poll_url(url, attempts, interval):
@@ -233,13 +298,26 @@ def cmd_api_get(args):
     out({"ok": ok, "status": status, "data": parse_json(raw)}, code=0 if ok else 1)
 
 
+def _decode_stdin(raw):
+    # PowerShell pipes to a native process's stdin as UTF-16 (often with a BOM), which json.loads can't
+    # read as UTF-8 — the cause of "--json-stdin: not valid JSON" on a perfectly good payload. Honor a BOM,
+    # fall back to UTF-16 when the bytes look 16-bit, else UTF-8 (BOM-tolerant).
+    if not raw:
+        return ""
+    if raw[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        return raw.decode("utf-16")
+    if b"\x00" in raw[:4]:
+        return raw.decode("utf-16-le" if raw[1:2] == b"\x00" else "utf-16-be")
+    return raw.decode("utf-8-sig")
+
+
 def _post_body(args):
     if args.json_stdin and args.json_file:
         fail("pass only one of --json-file / --json-stdin")
     if args.json_stdin:
-        body = parse_json(sys.stdin.read())
+        body = parse_json(_decode_stdin(sys.stdin.buffer.read()))
         if isinstance(body, str):
-            fail("--json-stdin: not valid JSON")
+            fail("--json-stdin: not valid JSON (tip: on Windows/PowerShell use --json-file)")
         return body
     if args.json_file:
         try:
@@ -315,6 +393,11 @@ def build_parser():
 
     p_list = sub.add_parser("list-apps", parents=[ssh, db], help="list service_applications (id,name,fqdn)")
     p_list.set_defaults(fn=cmd_list_apps)
+
+    p_wait = sub.add_parser("wait-admin", parents=[ssh, db], help="poll until the first admin exists (psql)")
+    p_wait.add_argument("--attempts", type=int, default=30, help="poll attempts (default 30)")
+    p_wait.add_argument("--interval", type=int, default=5, help="seconds between attempts (default 5)")
+    p_wait.set_defaults(fn=cmd_wait_admin)
 
     p_fqdn = sub.add_parser("set-fqdn", parents=[ssh, db], help="set service_applications.fqdn by id")
     p_fqdn.add_argument("--app-id", required=True, help="numeric service_applications.id (see list-apps)")

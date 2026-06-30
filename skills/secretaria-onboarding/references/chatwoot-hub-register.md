@@ -11,7 +11,7 @@ necessárias e **distintas**:
 ## Quando: happy-path se há licença
 
 A edição é decidida **no deploy** pelo marcador do CLI `~/.fazer-ai/onboarding.json`
-(`chatwootTier` + `chatwootLicenseId`), com fallback pro `list_licenses` no hub se o marcador faltar:
+(`chatwootTier` + `chatwootLicenseId`), com fallback pro `hub licenses` se o marcador faltar:
 - **`chatwootTier: "pro"`** (ou, sem marcador, há licença CHATWOOT no hub) → deploy da **imagem Pro** e **estes passos são happy-path**: registrar + atachar (use `chatwootLicenseId`) + Refresh pra ligar o Kanban. Não pule.
 - **`chatwootTier: "community"`** (ou, sem marcador, sem licença) → deploy da imagem **OSS** (sem Kanban) e segue; nada a fazer aqui.
 
@@ -21,18 +21,28 @@ A edição é decidida **no deploy** pelo marcador do CLI `~/.fazer-ai/onboardin
 > licença aparecer; ou seguir em OSS.
 
 > Pré-requisitos: `FRONTEND_URL` setado no container do Chatwoot (vira o host que identifica a instância e
-> gateia o Refresh). Hub MCP `app-fazer-ai` autorizado (se o token expirou, re-autorize o OAuth). Writes do
-> hub são **dry-run por padrão**; mexa só na sua própria licença/instância (ver `guardrails.md`).
+> gateia o Refresh). As ops do hub saem pelo **proxy do CLI** (`bunx @fazer-ai/secretaria hub …`), que usa
+> o OAuth do `~/.fazer-ai/oauth.json` do bootstrap (sem hub MCP na sessão); se ele expirou (erro de auth),
+> o operador re-roda o CLI. Writes do hub são **dry-run por padrão** (aplique com `--apply`); mexa só na sua
+> própria licença/instância (ver `guardrails.md`).
 
 ## Passos
 
-1. **Instância no hub.** Confira se já existe (`list_instances` / `get_license <id>`): o
-   `generate_install_script` do deploy pode já tê-la provisionado. Se faltar:
-   `create_instance { identifier: "<slug>" }` (dry-run, depois apply). Use a identidade que o hub casa com
-   a instância (o subdomínio/host); confirme com `get_instance`.
-2. **Atacha a licença.** `attach_license { license_id: "<licença CHATWOOT>", instance_id: "<id>" }`
-   (dry-run, depois apply). Uma feature por instância; os tipos têm que bater.
-3. **Refresh + verify na instância** (o botão "Refresh" do super admin) via `scripts/chatwoot-admin.py`, que roda o job e reporta os configs da assinatura (NÃO despeja valores crus que poderiam ser segredo):
+1. **Identidade da instância.** Pegue o host/identifier que o hub casa, direto do Chatwoot (read-only, sem hub):
+   ```sh
+   python3 scripts/chatwoot-admin.py installation-id --ssh root@<VPS_IP> --container <chatwoot-rails-container>
+   ```
+   Devolve `frontend_url` (o host) + `installation_identifier`. O `identifier` que o hub usa é o **host** (ex.: `chatwoot.<seu-dominio>`).
+2. **Instância no hub.** Confira se já existe e crie se faltar (dry-run primeiro; `--apply` pra valer):
+   ```sh
+   bunx @fazer-ai/secretaria hub instances
+   bunx @fazer-ai/secretaria hub create-instance --identifier chatwoot.<seu-dominio> --apply
+   ```
+3. **Atacha a licença** (uma feature por instância; os tipos têm que bater). O `--instance` é o id que aparece em `hub instances`:
+   ```sh
+   bunx @fazer-ai/secretaria hub attach-license --license <licença CHATWOOT> --instance <id> --apply
+   ```
+4. **Refresh + verify na instância** (o botão "Refresh" do super admin) via `scripts/chatwoot-admin.py`, que roda o job e reporta os configs da assinatura (NÃO despeja valores crus que poderiam ser segredo):
    ```sh
    python3 scripts/chatwoot-admin.py refresh-subscription --ssh root@<VPS_IP> --container <chatwoot-rails-container>
    ```
@@ -45,7 +55,7 @@ A edição é decidida **no deploy** pelo marcador do CLI `~/.fazer-ai/onboardin
 - **`FRONTEND_URL` vazio:** o controller do Refresh recusa, e o `installation_host` enviado ao hub fica
   vazio. Sete antes.
 - **403 / inativo no `/api/ping`:** a licença não está atachada à instância certa no hub. Confira
-  `get_license` / `get_instance` (o casamento é por identifier/host).
+  `bunx @fazer-ai/secretaria hub get-license --license <id>` / `hub get-instance --instance <id>` (casamento por identifier/host).
 - **Assinatura "out of sync" > 3 dias:** o job auto-desativa (`auto_deactivate_if_stale`). Rode o Refresh
   pra re-sincronizar.
 

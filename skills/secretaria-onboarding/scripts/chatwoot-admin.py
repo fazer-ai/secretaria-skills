@@ -12,6 +12,7 @@
 import argparse
 import base64
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -55,6 +56,17 @@ diag = {}
 puts "RESULT_JSON:" + JSON.generate({"refreshed" => true, "config_keys" => names, "diagnostics" => diag})
 '''
 
+# Lê a identidade da instância que o hub usa pra casar (host = FRONTEND_URL; identifier = UUID de
+# instalação do Chatwoot quando existe). É o input do `secretaria hub create-instance --identifier <host>`
+# / attach-license, sem precisar do hub MCP no agente. Read-only.
+RUBY_INSTALLATION_ID = r'''
+require 'json'
+ident = (InstallationConfig.find_by(name: 'INSTALLATION_IDENTIFIER')&.value rescue nil)
+host = ENV['FRONTEND_URL']
+host = (InstallationConfig.find_by(name: 'FRONTEND_URL')&.value rescue nil) if host.nil? || host.to_s.strip.empty?
+puts "RESULT_JSON:" + JSON.generate({"installation_identifier" => ident, "frontend_url" => host})
+'''
+
 
 def out(obj, code=0):
     print(json.dumps(obj))
@@ -70,9 +82,21 @@ def b64_pipe(payload, target):
     return f"echo '{blob}' | base64 -d | {target}"
 
 
+def split_ssh_opts(opts, _nt=None):
+    # POSIX shlex eats backslashes, mangling a Windows key path ("-i C:\Users\me\.ssh\key" ->
+    # "C:Usersme.sshkey"). On Windows, tokenize without escape processing and strip our own quotes so the
+    # backslashes survive. _nt is injectable for tests.
+    nt = (os.name == "nt") if _nt is None else _nt
+    if not opts:
+        return []
+    if nt:
+        toks = shlex.split(opts, posix=False)
+        return [t[1:-1] if len(t) >= 2 and t[0] == t[-1] and t[0] in "\"'" else t for t in toks]
+    return shlex.split(opts)
+
+
 def run_ssh(dest, ssh_opts, remote_cmd, timeout):
-    extra = shlex.split(ssh_opts) if ssh_opts else []
-    argv = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", *extra, dest, remote_cmd]
+    argv = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", *split_ssh_opts(ssh_opts), dest, remote_cmd]
     try:
         return subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
     except FileNotFoundError:
@@ -160,6 +184,27 @@ def cmd_refresh_subscription(args):
     out({"ok": True, **data})
 
 
+def cmd_installation_id(args):
+    if not CONTAINER_RE.match(args.container):
+        fail(f"invalid --container {args.container!r} (expected [A-Za-z0-9_.-]+)")
+    target = f"docker exec -i {args.container} bundle exec rails runner -"
+    proc = run_ssh(args.ssh, args.ssh_opts, b64_pipe(RUBY_INSTALLATION_ID, target), args.timeout)
+    combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
+    match = re.search(r"RESULT_JSON:(\{.*\})", combined)
+    if not match:
+        fail(
+            "Rails runner returned no result (is --container the Chatwoot rails container?)",
+            exit_code=proc.returncode,
+            stdout=(proc.stdout or "")[-600:],
+            stderr=(proc.stderr or "")[-600:],
+        )
+    try:
+        data = json.loads(match.group(1))
+    except ValueError:
+        fail("could not parse RESULT_JSON", raw=match.group(1)[:200])
+    out({"ok": True, **data})
+
+
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="chatwoot-admin.py",
@@ -183,6 +228,11 @@ def build_parser():
         "refresh-subscription", parents=[ssh], help="run the fazer.ai Refresh job + report subscription config"
     )
     refresh.set_defaults(fn=cmd_refresh_subscription)
+
+    idcmd = sub.add_parser(
+        "installation-id", parents=[ssh], help="read the instance identity the hub matches (host + uuid)"
+    )
+    idcmd.set_defaults(fn=cmd_installation_id)
 
     return parser
 
