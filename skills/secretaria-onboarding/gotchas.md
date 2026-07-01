@@ -133,6 +133,10 @@ Mintar a API key da v4 com `{ "name": ... }` → 422. O campo é `displayName`. 
 
 A máquina do operador pode ter **só `bun`** (sem `node` no PATH): `node helper.js` dá `CommandNotFoundException`. Não escreva helpers Node ad-hoc e não invoque `node`: rode os scripts com **`bun`** (e prefira os helpers vendorados da skill, `scripts/*.py`/`*.ts`, em vez de improvisar). As ops do hub saem pelo proxy `bunx @fazer-ai/secretaria hub …`, não por um helper Node escrito na hora.
 
+### Esperas de gate humano: em background, nunca em foreground
+
+Os polls que esperam uma ação do usuário no browser (`coolify.py wait-admin` no admin do Coolify, `sshkey.py wait-access` na chave SSH) bloqueiam por minutos. Em **foreground** eles travam o seu turno o tempo todo, sem nada a fazer no meio, e queimam tempo/tokens à toa (o operador vê "Running 1 shell command… (1m+)"). Rode-os **non-blocking / em background** e retome quando o comando sair (mesma regra do `docker pull` de imagem grande). Passe uma janela de attempts larga pro gate humano (ex.: `wait-admin --attempts 120`, ~10 min) e **não avance pro passo seguinte antes do `ok:true`**. No Claude Code o mecanismo é o `Bash` com `run_in_background` (dispara detached e te re-aciona no exit), não um shell foreground.
+
 ## Pendências conhecidas (não bloqueiam o core)
 
 - **TTS:** precisa de chave ElevenLabs real.

@@ -13,19 +13,19 @@ O **`<VPS_IP>` vem do usuário**, nunca de um chute. Se ele não disse qual e o 
 ssh -o ConnectTimeout=12 -o BatchMode=yes -o StrictHostKeyChecking=accept-new root@<VPS_IP> 'echo OK; hostname'
 ```
 - Saiu `OK` → **há acesso**; siga, **não pergunte nada de chave**. Anote a chave que funcionou para reusar.
-- `Permission denied (publickey…)`, exit ≠ 0 → **sem acesso**; vá ao passo 2. (`BatchMode=yes` evita travar pedindo senha; o `dangerouslyDisableSandbox: true` é obrigatório por ser rede.)
+- `Permission denied (publickey…)`, exit ≠ 0 → **sem acesso**. Antes de gerar, se `~/.ssh/fazer-ai-secretaria` já existe (run anterior), sonde de novo com ela (`-i ~/.ssh/fazer-ai-secretaria`): logou → já está cadastrada, **reuse** (não gere outra nem peça re-paste). Senão, passo 2. (`BatchMode=yes` evita travar pedindo senha; o `dangerouslyDisableSandbox: true` é obrigatório por ser rede.)
 
 **2. Sem acesso: gere a chave com o helper e imprima a pública para o operador cadastrar no painel.** Use `scripts/sshkey.py` (não monte o `ssh-keygen` à mão): ele invoca o `ssh-keygen` com **argv direto**, então a passphrase vazia passa em qualquer SO. No PowerShell (Windows) o `ssh-keygen -N ""` cru **perde** o argumento vazio, cai no prompt interativo e **trava**.
 ```sh
-python3 scripts/sshkey.py generate --name fazer-ai-<nome> --comment fazer-ai-onboarding
+python3 scripts/sshkey.py generate --name fazer-ai-secretaria --comment fazer-ai-onboarding
 ```
-Saída JSON com `public_key` (idempotente: se a chave já existe, só reimprime). Mostre essa linha (`ssh-ed25519 …`) e instrua o operador a colá-la no painel da VPS (você **não** faz isto pela API, ver *Nota MCP*):
+Saída JSON com `public_key` (idempotente: se a chave já existe, só reimprime). **Use o nome FIXO `fazer-ai-secretaria`, literal, nunca o placeholder `<nome>` nem um sufixo inventado**: com nome estável o generate reusa a MESMA chave em toda run, e o operador cola a pública **uma vez só**. Nome novo a cada vez faz a chave que ele colou "sumir" (o agente passa a usar outra) e força re-paste, o bug recorrente aqui. Mostre essa linha (`ssh-ed25519 …`) e instrua o operador a colá-la no painel da VPS (você **não** faz isto pela API, ver *Nota MCP*):
 - **Hostinger:** painel da VPS → card **"Chave SSH"** → **"Gerenciar"** → **"+ Chave SSH"** → cole a chave pública → **"Salvar"**.
 - **Outro provedor:** o equivalente no painel dele ("SSH Keys" / "Add SSH key" da VPS).
 
-**3. Espere o cadastro e confirme.** Em vez de pedir "me avise quando cadastrar", deixe o helper **aguardar** o acesso (faz poll do SSH e detecta sozinho quando a chave entra):
+**3. Espere o cadastro e confirme.** Em vez de pedir "me avise quando cadastrar", deixe o helper **aguardar** o acesso (faz poll do SSH e detecta sozinho quando a chave entra). **Rode em background, não em foreground** (o poll trava o seu turno enquanto o usuário cola a chave no painel); retome quando sair:
 ```sh
-python3 scripts/sshkey.py wait-access --ssh root@<VPS_IP> --ssh-opts "-i ~/.ssh/fazer-ai-<nome>"
+python3 scripts/sshkey.py wait-access --ssh root@<VPS_IP> --ssh-opts "-i ~/.ssh/fazer-ai-<nome>"   # em background, non-blocking
 ```
 `ok:true` → há acesso, siga. `ok:false` (timeout) → aí sim peça pro operador conferir o cadastro. Daí use o **comando de trabalho** (determinístico) no resto do fluxo:
 ```sh

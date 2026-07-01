@@ -12,11 +12,11 @@ VPS nova sem Coolify → instale com o instalador oficial. Resultado esperado: i
 
 O **usuário cria** o 1º admin pelo browser em `http://<VPS_IP>:8000` (gate de conta): **esse é o único passo manual do Tier A**; você entrega o link e **espera** (`wait-admin`), nunca cria por conta própria. Depois do admin, **NÃO peça mais nada ao usuário**: o token e o Instance Domain você faz por SSH (abaixo). **Nunca** mande o usuário abrir "Settings → …".
 
-Em vez de pedir "responda quando criar", **aguarde** o admin aparecer (poll no banco via psql, não trava o operador):
+Em vez de pedir "responda quando criar", **aguarde** o admin aparecer (poll no banco via psql, não trava o operador). **Rode em background, não em foreground**: o poll bloqueia por minutos e não há nada a fazer no meio, então dispare non-blocking e retome quando o comando sair (nunca deixe o poll travar o seu turno). Como o gate depende do usuário criar a conta no browser, dê uma janela larga (`--attempts 120`, ~10 min):
 ```sh
-python3 scripts/coolify.py wait-admin --ssh root@<VPS_IP>
+python3 scripts/coolify.py wait-admin --ssh root@<VPS_IP> --attempts 120   # em background, non-blocking
 ```
-`ok:true` (com `users>0`) → siga pro token. `ok:false` (timeout) → aí pergunte ao operador. Brownfield: se já existe admin, detecta na 1ª tentativa e segue. (O detector é psql, não Tinker: não dá o falso "sem admin" que o Tinker dava ao ecoar o payload.)
+`ok:true` (com `users>0`) → siga pro token. `ok:false` (timeout) → re-lance ou pergunte ao operador. **Não avance pro token antes do `ok:true`.** Brownfield: se já existe admin, detecta na 1ª tentativa e segue. (O detector é psql, não Tinker: não dá o falso "sem admin" que o Tinker dava ao ecoar o payload.)
 
 ## API Access (token): você faz por SSH, não pela UI
 

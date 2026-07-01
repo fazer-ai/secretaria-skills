@@ -113,7 +113,7 @@ def build_parser():
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     gen = sub.add_parser("generate", help="create ~/.ssh/<name> ed25519 (idempotent) and print the public key")
-    gen.add_argument("--name", required=True, help="bare key filename, e.g. fazer-ai-onboarding-<domain>")
+    gen.add_argument("--name", required=True, help="bare key filename; use the fixed 'fazer-ai-secretaria' so re-runs reuse the same key (no per-run suffix)")
     gen.add_argument("--comment", default="fazer-ai-onboarding", help="ssh-keygen -C comment")
     gen.add_argument("--ssh-dir", default="", help="override the .ssh dir (default ~/.ssh; for tests)")
     gen.add_argument("--timeout", type=int, default=30)
