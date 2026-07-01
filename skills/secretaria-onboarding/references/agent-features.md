@@ -9,9 +9,11 @@ o agente usa. Trate a seção 1 como **gate**, não como "nice to have".
 O editor do agente lista "Avisos de configuração". Resolva **cada um** (ou desligue a feature
 conscientemente):
 
-- **KB sem indexar / FAILED.** Os docs do import entram UNINDEXED, e vão pra FAILED se o embedding
-  por-tenant não estava setado na hora. Sequência (detalhe em [`08-agent-import.md`](08-agent-import.md)
-  §4-5): setar embedding por-tenant → `reindex` da base → `retry` por-doc dos FAILED, até **todos READY**.
+- **KB sem indexar.** Os docs do import entram UNINDEXED e só indexam com o embedding por-tenant ligado
+  + o OpenAI preenchido (sem isso ficam UNINDEXED, não FAILED). Sequência (detalhe em
+  [`08-agent-import.md`](08-agent-import.md) §4-5): setar embedding por-tenant → `knowledge_reindex` da
+  base (devolve `blocked` + `fillAt` se falta preencher a credencial; `include_failed:true` recupera
+  FAILED reais), até **todos READY**.
   Depois **verifique grounding**: pergunte no playground algo que só a KB sabe e confirme que a resposta usa
   o conteúdo indexado. KB não-READY = sem grounding = critério de aceite (`10`) não batido.
 - **STT/TTS/visão ligados sem chave.** Conecte a credencial (deeplink) **ou** desligue a feature. Não deixe

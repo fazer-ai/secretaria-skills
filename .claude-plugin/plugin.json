@@ -1,6 +1,6 @@
 {
   "name": "secretaria",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "description": "Skills da Secretária V4 (fazer.ai): onboarding (subir do zero num VPS), desenvolvimento (mexer no código) e operação (debugar em produção).",
   "author": {
     "name": "fazer.ai",

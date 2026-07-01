@@ -40,12 +40,13 @@ Depois do E2E aprovado (etapa 10), **o usuário** decide quando o agente vai ao 
 
 ## 4. Embedding é por-tenant (senão a KB falha)
 
-Ligue a credencial de embedding no tenant **via MCP**: `tenant_settings_update { embedding: { credential_ref: "<nome da entry>" } }` (provider/model default a `openai`/`text-embedding-3-small`). Sem isso os docs vão pra FAILED (`embedding credential not configured`). É no nível do **tenant**, não por-KB.
+Ligue a credencial de embedding no tenant **via MCP**: `tenant_settings_update { embedding: { credential_ref: "<nome da entry>" } }` (provider/model default a `openai`/`text-embedding-3-small`). Sem isso (ou com a credencial ainda pendente) a KB **não indexa**: os docs ficam `UNINDEXED`, **não** FAILED (pré-requisito faltando não é falha). É no nível do **tenant**, não por-KB. O embedding usa a chave OpenAI, então ligue-o **depois** do usuário preencher o OpenAI (passo 2).
 
-## 5. Indexar a KB + retry dos FAILED
+## 5. Indexar a KB (`knowledge_reindex`)
 
-- Os docs do import entram **UNINDEXED**. Com o embedding já ligado (passo 4), eles precisam ser indexados, mas **não há MCP tool de reindex ainda** (gap conhecido): o **usuário** clica **Indexar** no alerta pós-import da KB (tela `/knowledge`, o mesmo aviso "documentos que precisam ser indexados"). É um passo de browser dele, como a criação das contas.
-- Docs que já foram pra **FAILED** (o embedding faltava no momento do import) não são pegos pelo reindex; re-enfileire por doc **via MCP**: `knowledge_document_retry { document_id }`.
+- Os docs do import entram **UNINDEXED**. Com o embedding ligado (passo 4) **e o OpenAI preenchido**, indexe a base inteira numa chamada **via MCP**: `knowledge_reindex { knowledge_base_id }` (dry-run por padrão; `dry_run:false` aplica).
+- **Se o pré-requisito ainda falta** (embedding não configurado, ou credencial pendente), o `knowledge_reindex` **não enfileira nada** e devolve `blocked` + `fillAt` (deeplink pra preencher a credencial); os docs **ficam UNINDEXED**, não FAILED. Entregue o `fillAt` ao usuário, espere preencher, e re-rode.
+- Pra recuperar docs que **de fato** falharam na ingestão (erro real, não pré-requisito), `knowledge_reindex { knowledge_base_id, include_failed:true }` re-enfileira os FAILED em lote (ou `knowledge_document_retry { document_id }` por doc).
 
 ## 6. Gate antes de seguir
 

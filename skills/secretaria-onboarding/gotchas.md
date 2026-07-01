@@ -105,13 +105,13 @@ Langfuse v3 exige S3 blob storage na ingestion. O one-click sobe sem MinIO e com
 
 O token MCP do admin do `/setup` é **fleet-level** (`whoami` → `tenantId: null`): ele não tem tenant embutido. Toda tool per-tenant (agent_import, vault, deployment_connect, …) exige o argumento **`tenant`** (slug ou id de `tenant_list`). O erro clássico: a tool reclama *"fleet-level … pass `tenant`"*/*"no tenant target"* e o agente conclui que **falta um tenant** e chama `tenant_create` → cria um tenant **órfão**, e o import cai no lugar errado. Há **um** tenant (o do `/setup`); rode `tenant_list` e passe o `tenant`. Detalhe em `references/06-setup-and-mcp.md`.
 
-### Embedding é por-tenant (senão os docs vão pra FAILED)
+### Embedding é por-tenant (sem ele a KB não indexa)
 
-Sem `PUT /v1/tenant-settings/embedding {provider, model, credentialRef}`, os docs da KB vão pra FAILED (`embedding credential not configured`). É no nível do **tenant**, não por-KB nem da chave do modelo do agente.
+Sem `PUT /v1/tenant-settings/embedding {…, credentialRef}` (ou com a credencial ainda **pendente**), a KB **não indexa**: os docs ficam `UNINDEXED` e o `knowledge_reindex` volta `blocked` + `fillAt` (deeplink pra preencher), **não** FAILED (pré-requisito faltando não é falha). É no nível do **tenant**, não por-KB nem da chave do modelo do agente.
 
-### `reindex` não recupera docs FAILED
+### reindex de docs FAILED pede `include_failed`
 
-Depois de configurar o embedding, `POST /v1/knowledge/bases/:id/reindex` retorna `{queued:0}` se os docs já estão FAILED. Use `POST /v1/knowledge/documents/:id/retry` por doc.
+`knowledge_reindex` (REST: `POST /v1/knowledge/bases/:id/reindex`) varre só `UNINDEXED` por padrão. Pra recuperar docs **FAILED** (erro real de ingestão) em lote, passe `include_failed:true`; ou `POST /v1/knowledge/documents/:id/retry` por doc.
 
 ### agent_import resolve credenciais por nome
 
