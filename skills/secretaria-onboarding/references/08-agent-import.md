@@ -15,7 +15,7 @@ agent_import { "export": <conteúdo de samples/agents/maria-clinica-moreira.json
 
 ## 2. Preencher credenciais (segredo NUNCA passa pelo agente)
 
-- **Sempre entregue o deeplink**, nunca só "vá em Configurações → Credenciais". Cada pending abre direto pelo `fillAt = ${PUBLIC_URL}/resources/vault?fill=<vaultId>` (o `?fill=<id>` abre o modal de preenchimento da entrada). É o caminho canônico das credenciais do **usuário** (OpenAI/ElevenLabs/Gemini/Asaas).
+- **Sempre entregue o deeplink**, nunca só "vá em Configurações → Credenciais". Cada pending abre direto pelo `fillAt = ${PUBLIC_URL}/resources/vault?fill=<vaultId>` (o `?fill=<id>` abre o modal de preenchimento da entrada). É o caminho canônico das credenciais do **usuário** (OpenAI/ElevenLabs/Gemini/Asaas). O formato está aqui; **não** baixe/grepe o bundle da SPA pra descobrir a rota/deeplink (minificado + hasheado, muda a cada build).
 - **De onde vem o `fillAt`:** um `credential_create` **real** (`dry_run:false`) devolve o `fillAt` na resposta. Mas o **dry-run não devolve**, e re-criar uma que já existe **duplica**. Pra uma pending que **já existe** (import/brownfield/run anterior), **não re-crie**: pegue o `id` no `vault_list` e monte a URL você mesmo (`${PUBLIC_URL}/resources/vault?fill=<id>`).
 - A chave OpenAI e as demais do **usuário** (ElevenLabs/Gemini/Asaas) o usuário preenche por esse deeplink; o segredo nunca passa pelo agente. Acompanhe pelo `vault_list` até o status sair de `pending`. (Exceção: o Langfuse, cujas keys **você** provisiona ao semear o projeto, não é segredo do usuário; ligue na v4 via `langfuse_connect` com as keys inline, ver `references/05-langfuse.md`.)
 

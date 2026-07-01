@@ -18,6 +18,10 @@ python3 scripts/coolify.py api-post  --base-url http://<VPS_IP>:8000 --token-fil
 
 **Preserve a porta** quando o template tem (Langfuse: `...:3000`). Verifique por sslip.io enquanto o DNS não propaga.
 
+### Windows/Git Bash: arg com `/` inicial vira caminho do Windows
+
+No Git Bash/MSYS do Windows, um argumento que começa com `/` (ex.: `coolify.py api-post --path /services/<uuid>/restart`, ou um path de `docker exec`) é convertido pra caminho do Windows (`C:/Program Files/Git/services/...`) **antes** do Python/comando ver, e a chamada bate em rota errada (404/alvo errado). Prefixe com `MSYS_NO_PATHCONV=1` (ou passe a barra dupla `//services/...`). Só morde no Git Bash; PowerShell puro e Linux/macOS não.
+
 ### `docker_compose_raw` precisa ser base64
 
 `POST /api/v1/services` com o compose cru → 422 "should be base64 encoded". O `scripts/coolify.py create-service` faz o base64 do `--compose-file`; se POSTar à mão via `api-post`, encode antes.

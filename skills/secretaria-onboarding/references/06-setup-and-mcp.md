@@ -32,7 +32,7 @@ O access token fica no store de MCP do harness, não conosco (`guardrails.md`).
 
 - **PARE e peça ao usuário pra completar o passo do harness dele** (Claude: **reiniciar → `/mcp` Authenticate**; Codex/Hermes: **`mcp login` → reiniciar**), confirmando o Authenticate/login **e** o reinício. Espere ele voltar. Esse é o **único** caminho.
 - **NUNCA contorne.** É **proibido**, para qualquer config da v4: chamar a **API REST direto** (mintar API key, cookie + `x-tenant-id`); fazer requisições ao endpoint `/mcp` **por fora do harness**; **ler o código-fonte/bundle da v4** (`/app/src`, `/app/dist`) pra descobrir endpoints internos; montar **OAuth manual**. Esses bypasses pulam dry-run/audit/fence, são frágeis, e **não provam o MCP**, que é o produto que esta run existe pra validar.
-- **Sinal de que você entrou no anti-padrão:** se você se pegou grepando `agents.controller.ts`, procurando `POST /api/v1/agents/import`, ou mintando uma API key pra "equivalente REST" porque "a tool não apareceu" → **PARE imediatamente** e peça o reinício. Não existe "fallback REST transitório" para config da v4.
+- **Sinal de que você entrou no anti-padrão:** se você se pegou grepando `agents.controller.ts`, procurando `POST /api/v1/agents/import`, ou mintando uma API key pra "equivalente REST" porque "a tool não apareceu" → **PARE imediatamente** e peça o reinício. Não existe "fallback REST transitório" para config da v4. **Idem pra achar uma rota/deeplink do console:** não baixe+grepe o bundle da SPA; as rotas que a skill usa estão nas refs (ex.: o deeplink de credencial em `08-agent-import.md` §2), e o bundle é minificado/hasheado (frágil).
 
 ## Alvo de tenant nas MCP tools (SUPER_ADMIN)
 
