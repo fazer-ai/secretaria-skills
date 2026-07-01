@@ -23,7 +23,8 @@ Valem em qualquer execução desta skill. Cruzar qualquer uma é **parar e pergu
 
 ## Gates de criação de conta
 
-- O **usuário** cria o 1º admin de cada ferramenta no browser (Coolify/Portainer, Chatwoot, Langfuse, v4 `/setup`). O agente **entrega o link + a instrução e espera** o usuário criar; **nunca** cria a conta por conta própria (não há atalho: nada de CLI/console/auto-seed criando o admin). Na v4, a URL `/setup` com o token impresso no boot. Depois da conta criada, o agente segue (obtém o token via Rails runner transitório, deploy, config).
+- O **usuário** cria o 1º admin no browser do orquestrador (Coolify/Portainer), do Chatwoot e da v4 (`/setup`). O agente **entrega o link + a instrução e espera** o usuário criar; **nunca** cria essas contas por conta própria (não há atalho: nada de CLI/console/auto-seed criando esses admins). Na v4, a URL `/setup` com o token impresso no boot. Depois da conta criada, o agente segue (obtém o token via Rails runner transitório, deploy, config).
+- **Exceção: o Langfuse** é provisionado **headless** (`LANGFUSE_INIT_*`, etapa 5): o agente semeia usuário (OWNER) + org + projeto + keys num deploy só, com signup fechado desde o boot. O usuário **não cria conta** lá, só faz **login** na conta semeada (`/auth/sign-in`) e troca a senha. É o padrão oficial do Langfuse e evita a janela de signup aberto (o Langfuse não tem o gate primeiro-admin-depois-fecha do Coolify/v4).
 
 ## Estilo
 

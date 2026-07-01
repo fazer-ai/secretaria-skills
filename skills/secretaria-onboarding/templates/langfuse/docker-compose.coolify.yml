@@ -74,18 +74,22 @@ services:
     image: 'langfuse/langfuse:3'
     environment:
       <<: *langfuse-env
-      # ── headless project seed (agent-driven; empty = no seed) ──
-      # After the user creates their account + organization in the browser, the agent reads the user's
-      # org id and sets ORG_ID here + a project + a generated key pair, then redeploys. Langfuse upserts
-      # by id: the existing org and the user's membership are PRESERVED, and the project + keys are created
-      # under it. The agent then wires those keys into Secretária v4. Empirically validated on langfuse:3.
-      # See references/05-langfuse.md. (User creation stays in the browser, so no LANGFUSE_INIT_USER_*.)
-      # On Coolify the agent sets these via the service env editor / API, then redeploys.
+      # ── headless seed (agent-driven; empty = no seed) ──
+      # The agent provisions EVERYTHING on the first boot: a user (org owner) + org + project + key pair,
+      # with AUTH_DISABLE_SIGNUP=true from the start (default above), so signup is never open. The operator
+      # SIGNS IN (never signs up) with the seeded email + password and changes it; the agent already holds
+      # the keys (it generated them) and wires them into Secretária v4. One deploy, no redeploy, no open
+      # signup window; this is Langfuse's own recommended headless-init pattern. See references/05-langfuse.md.
+      # On Coolify the agent sets these via the service env editor / API before the (single) deploy.
       LANGFUSE_INIT_ORG_ID: '${LANGFUSE_INIT_ORG_ID:-}'
+      LANGFUSE_INIT_ORG_NAME: '${LANGFUSE_INIT_ORG_NAME:-}'
       LANGFUSE_INIT_PROJECT_ID: '${LANGFUSE_INIT_PROJECT_ID:-}'
       LANGFUSE_INIT_PROJECT_NAME: '${LANGFUSE_INIT_PROJECT_NAME:-}'
       LANGFUSE_INIT_PROJECT_PUBLIC_KEY: '${LANGFUSE_INIT_PROJECT_PUBLIC_KEY:-}'
       LANGFUSE_INIT_PROJECT_SECRET_KEY: '${LANGFUSE_INIT_PROJECT_SECRET_KEY:-}'
+      LANGFUSE_INIT_USER_EMAIL: '${LANGFUSE_INIT_USER_EMAIL:-}'
+      LANGFUSE_INIT_USER_NAME: '${LANGFUSE_INIT_USER_NAME:-}'
+      LANGFUSE_INIT_USER_PASSWORD: '${LANGFUSE_INIT_USER_PASSWORD:-}'
       # Coolify routes the public FQDN to this container's port 3000 via these magic vars.
       SERVICE_FQDN_LANGFUSE_3000: '${SERVICE_FQDN_LANGFUSE_3000}'
       SERVICE_URL_LANGFUSE_3000: '${SERVICE_URL_LANGFUSE_3000}'

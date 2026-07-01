@@ -8,20 +8,20 @@ O template one-click declara os `LANGFUSE_S3_*` mas sobe **sem MinIO e com creds
 
 `templates/langfuse/docker-compose.coolify.yml`: topologia `langfuse` (web) + `langfuse-worker` + `postgres` + `redis` + `clickhouse` + **`minio`**, com as 3 famílias S3 (`EVENT_UPLOAD`/`MEDIA_UPLOAD`/`BATCH_EXPORT`) apontando pra `http://minio:9000` via as magic vars `SERVICE_USER_MINIO`/`SERVICE_PASSWORD_MINIO`. Deploy via `scripts/coolify.py create-service` (base64) + `set-fqdn` (abaixo). Detalhes e mapa magic-var↔env genérico: `templates/langfuse/README.md`.
 
-## Fluxo user-first-seed (você provisiona as keys; o usuário nunca copia nada)
+## Fluxo headless-seed (você provisiona TUDO num deploy; o usuário só faz login)
 
-Validado empiricamente no `langfuse:3`. O Langfuse sobe **sem** org/projeto/usuário. A sequência:
+Padrão oficial de headless-init do Langfuse, **validado empiricamente** (stack local com o compose deste template: o `LANGFUSE_INIT_USER` vira **OWNER** da org, o signup fica fechado desde o boot, o user semeado loga com `role:OWNER`, e as keys ingerem `207`). **Não deixe o signup aberto**: o Langfuse **não tem** o gate "primeiro-admin-depois-fecha" do Coolify/v4 (`AUTH_DISABLE_SIGNUP=true` devolve `422` sempre, sem exceção pro 1º usuário), então signup aberto seria uma janela real pra qualquer um se cadastrar na instância exposta. Semeie tudo de uma vez:
 
-1. **Deploy com signup aberto.** Suba com `AUTH_DISABLE_SIGNUP=false` (Coolify: setar na env do serviço; genérico: no `.env`). Sem isso o usuário não consegue se registrar.
-2. **O usuário cria conta + organização no browser** (`https://langfuse.<seu-dominio>:3000`). Entregue o link e **espere**; nunca crie a conta por conta própria. Atenção ao que o teste empírico mostrou: o signup cria **só o usuário**; a **organização é um 2º passo** do onboarding do Langfuse. Espere a **org** existir, não só a conta.
-3. **Descubra o `org_id` do usuário** pelo Postgres do Langfuse (você tem SSH + docker na VPS; o container é UUID no Coolify, ache pela imagem `langfuse`+`postgres` como no inventário brownfield):
-   ```sh
-   docker exec <langfuse-postgres> psql -U <user> -d <db> -tAc "SELECT id, name FROM organizations"
-   ```
-4. **Semeie o projeto + as keys.** Gere um par `pk-lf-…`/`sk-lf-…` e set na env do serviço: `LANGFUSE_INIT_ORG_ID=<org do usuário>`, `LANGFUSE_INIT_PROJECT_ID`, `LANGFUSE_INIT_PROJECT_NAME`, `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`, `LANGFUSE_INIT_PROJECT_SECRET_KEY` (**sem** `LANGFUSE_INIT_USER_*`, a conta é do usuário), e **redeploy**. O Langfuse faz upsert **por id**: a org e a membership do usuário são **preservadas**, e o projeto + keys nascem **dentro** da org dele.
-5. **Feche o signup.** Set `AUTH_DISABLE_SIGNUP=true` e redeploy. O seed é idempotente (re-rodar não duplica), e o signup passa a devolver `422 Sign up is disabled`.
+1. **Gere os valores do seed.** Um par de keys `pk-lf-…`/`sk-lf-…`, um id de org e um de projeto (strings únicas), e uma **senha forte pro usuário com um símbolo** (a política do Langfuse exige um caractere não-alfanumérico em signup/troca; o seed e o login aceitam sem, mas gere com pra robustez). O **e-mail é o do operador** (você já tem do onboarding).
+2. **Semeie TUDO num deploy só** (o signup já nasce fechado: `AUTH_DISABLE_SIGNUP=true` é o default do template). Set na env do serviço (Coolify) ou no `.env` (genérico) e **deploy uma vez**:
+   - `LANGFUSE_INIT_USER_EMAIL` (operador), `LANGFUSE_INIT_USER_NAME`, `LANGFUSE_INIT_USER_PASSWORD` (a senha gerada)
+   - `LANGFUSE_INIT_ORG_ID`, `LANGFUSE_INIT_ORG_NAME`
+   - `LANGFUSE_INIT_PROJECT_ID`, `LANGFUSE_INIT_PROJECT_NAME`, `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` (`pk-lf-…`), `LANGFUSE_INIT_PROJECT_SECRET_KEY` (`sk-lf-…`)
 
-Como **você gerou** as keys no passo 4, elas já estão na sua mão pra ligar na v4: o usuário nunca abre "Settings → API Keys" nem copia segredo nenhum.
+   No boot o Langfuse cria o **usuário (OWNER da org) + org + projeto + keys**. O USER exige a ORG (por isso vão juntos); upsert **por id**, então re-deploy não duplica.
+3. **Entregue o login ao operador.** A URL do Langfuse em **`/auth/sign-in`** (login, **não** signup), com o **e-mail dele + a senha gerada**; peça pra ele **trocar a senha** no 1º acesso. Ele nunca abre "Settings → API Keys" nem copia key nenhuma.
+
+Como **você gerou** as keys no passo 1, elas já estão na sua mão pra ligar na v4 (abaixo). Um deploy, sem redeploy, sem ler `org_id` no Postgres, e o signup **nunca** ficou aberto.
 
 ## FQDN (preserve a porta)
 

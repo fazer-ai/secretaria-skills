@@ -76,33 +76,34 @@ editor instead of a `.env` file. Put your own TLS-terminating reverse proxy in f
 | `SERVICE_BASE64_NEXTAUTHSECRET` | `LANGFUSE_NEXTAUTH_SECRET` | NextAuth secret |
 | `SERVICE_URL_LANGFUSE` | `LANGFUSE_PUBLIC_URL` | Public URL |
 
-## Seed the project + keys (headless, agent-driven)
+## Seed everything headless (agent-driven, one deploy)
 
-The agent does **not** ask the user to copy keys out of the UI. Instead:
+The agent does **not** ask the user to copy keys out of the UI, and does **not** open signup. It
+provisions everything on the first boot (Langfuse's own recommended headless-init pattern):
 
-1. Deploy with `AUTH_DISABLE_SIGNUP=false` (Coolify: set it on the service; generic: it is in `.env`).
-2. The user opens the Langfuse URL and **signs up, then creates their organization** in the browser.
-   Signup alone creates only a user: the organization is a second onboarding step, so the agent waits
-   for the org to exist.
-3. The agent reads the user's org id from Langfuse Postgres, e.g.
-   `docker exec <langfuse-postgres> psql -U <user> -d <db> -tAc "SELECT id, name FROM organizations"`.
-4. The agent sets `LANGFUSE_INIT_ORG_ID=<that org>`, a `LANGFUSE_INIT_PROJECT_ID` / `_NAME`, and a
-   generated `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` (`pk-lf-…`) / `_SECRET_KEY` (`sk-lf-…`), then redeploys.
-   Langfuse upserts by id, so the org and the user's membership are preserved and the project + key pair
-   are created under it. No `LANGFUSE_INIT_USER_*`; user creation stays in the browser.
-5. The agent flips `AUTH_DISABLE_SIGNUP=true` (closes signup) and wires the generated keys into
-   Secretária V4 (below).
+1. The agent generates a `pk-lf-…` / `sk-lf-…` key pair, an org id + name, a project id + name, and a
+   strong password for the user (include a non-alphanumeric char). The user email is the operator's.
+2. The agent sets, on the service env (Coolify) or `.env` (generic), and deploys **once** with
+   `AUTH_DISABLE_SIGNUP=true` (the template default):
+   - `LANGFUSE_INIT_USER_EMAIL` / `_NAME` / `_PASSWORD`
+   - `LANGFUSE_INIT_ORG_ID` / `_NAME`
+   - `LANGFUSE_INIT_PROJECT_ID` / `_NAME` / `_PUBLIC_KEY` / `_SECRET_KEY`
 
-Empirically validated on `langfuse:3`: re-seeding preserves the existing org row (same `created_at`, no
-duplicate), the owner membership survives, the project lands under the user's org, the seeded keys
-authenticate against `/api/public/projects`, and signup then returns `422 Sign up is disabled`.
+   On boot Langfuse creates the **user (org OWNER) + org + project + keys**. The user requires the org
+   (seed them together); it upserts by id, so a redeploy never duplicates.
+3. The operator **signs in** at `/auth/sign-in` (never signs up) with the seeded email + password and
+   changes it. The agent already holds the keys and wires them into Secretária V4 (below).
+
+Empirically validated with this template's compose: the `LANGFUSE_INIT_USER` becomes org `OWNER`, the
+seeded user signs in (session shows `role: OWNER`), the seeded keys authenticate ingestion (`207`), and
+signup returns `422 Sign up is disabled` from the start, with no open-signup window.
 
 ## Verify ingestion actually works
 
 A green health check is **not** enough (it only proves Postgres). Confirm a trace round-trips:
 
 ```sh
-# 1) create a project API key pair in the Langfuse UI, then:
+# 1) use the seeded pk-lf-…/sk-lf-… pair (or create one in the UI), then:
 PK=pk-lf-...; SK=sk-lf-...; BASE=https://langfuse.example.com
 
 # 2) POST a trace event, expect HTTP 207/200 (NOT 500):

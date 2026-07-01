@@ -53,7 +53,7 @@ Abra a referência da etapa **antes** de executá-la (carga sob demanda). O flux
 
 ## Gates de conta (o usuário cria cada admin)
 
-O **usuário** cria o 1º admin de cada ferramenta no browser: o orquestrador (Coolify/Portainer), o Chatwoot, o Langfuse e a v4 (`/setup`). Você **entrega o link + a instrução e espera** (no Coolify, `coolify.py wait-admin`; na v4, a URL `/setup` com o token do boot), **nunca** cria a conta por conta própria. Depois do admin criado, o token e o resto da config são com você. Detalhes em `guardrails.md`.
+O **usuário** cria o 1º admin no browser do orquestrador (Coolify/Portainer), do Chatwoot e da v4 (`/setup`). Você **entrega o link + a instrução e espera** (no Coolify, `coolify.py wait-admin`; na v4, a URL `/setup` com o token do boot), **nunca** cria essas contas por conta própria. Depois do admin criado, o token e o resto da config são com você. **Exceção: o Langfuse** é headless (`LANGFUSE_INIT_*`, etapa 5): você semeia a conta (usuário OWNER) e o operador só faz **login** (`/auth/sign-in`). Detalhes em `guardrails.md`.
 
 ## Fora de escopo desta skill (por enquanto)
 
