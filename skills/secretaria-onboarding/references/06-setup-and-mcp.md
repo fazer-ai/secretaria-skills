@@ -15,18 +15,22 @@ O `/setup` cria **um** tenant a partir do `companyName` que quem preenche o form
 
 ## Conectar o MCP da v4 (OAuth). GATE: sem as tools, PARE, não contorne
 
-Toda a config da v4 (import do agente, vault, tenant-settings, KB, deployment/bind) é **exclusivamente via MCP tools**: elas carregam dry-run + audit + o fence de tenant. O fluxo:
+Toda a config da v4 (import do agente, vault, tenant-settings, KB, deployment/bind) é **exclusivamente via MCP tools**: elas carregam dry-run + audit + o fence de tenant. As tools de MCP só carregam no **boot** da sessão, e a **ordem do reinício muda por harness**: o Claude autentica na TUI (`/mcp`), que exige o server já carregado no boot, então reinicia **antes** de autenticar; Codex/Hermes autenticam por comando de CLI, então reiniciam **depois**. Endpoint da v4: `https://agentes.<seu-dominio>` (discovery/caminho exato em `docs/mcp.md`).
 
-1. **Adicione o MCP server** apontando pro endpoint da v4 em `https://agentes.<seu-dominio>` (discovery/caminho em `docs/mcp.md`), pelo comando do **seu harness**:
-   - **Claude Code:** `claude mcp add` (transport HTTP).
-   - **Codex:** `codex mcp add` + o login OAuth (abre o browser).
-   - **Hermes:** o equivalente do harness.
-   O usuário libera o **OAuth** uma vez; o access token fica no store de MCP do harness, não conosco (`guardrails.md`).
-2. **Reinicie a sessão do harness.** As tools MCP só são carregadas no **boot** da sessão; depois do `mcp add`, elas **não** aparecem na sessão atual. Isto é esperado, não é falha.
+**Claude Code** (reinicie ANTES de autenticar):
+1. **Adicione:** `claude mcp add` (transport HTTP) pro endpoint. O server entra no config, mas **não** aparece na sessão atual nem no `/mcp` (a sessão leu o config no boot).
+2. **Reinicie a sessão** (feche e reabra o `claude` no mesmo dir). Só agora o `/mcp` lista `fazer-ai` como **"Needs authentication"** (esperado, não é falha).
+3. **Autentique:** `/mcp` → `fazer-ai` → **Authenticate** → browser; o usuário loga com o admin do `/setup` (SUPER_ADMIN) e aprova os escopos (`mcp:read/write/admin`). Ao voltar **"Connected"**, as tools carregam **na mesma sessão, sem 2º reinício**.
+
+**Codex / Hermes** (autentique por CLI, depois reinicie):
+1. **Adicione + logue:** `codex mcp add` + `codex mcp login` (ou o equivalente do Hermes), que abre o browser pro mesmo login SUPER_ADMIN.
+2. **Reinicie a sessão.** As tools carregam no boot seguinte.
+
+O access token fica no store de MCP do harness, não conosco (`guardrails.md`).
 
 **GATE DURO. Se as tools `fazer-ai` (`whoami`, `tenant_list`, `agent_import`, …) NÃO estão expostas nesta sessão:**
 
-- **PARE e peça ao usuário pra reiniciar a sessão do harness** (confirme antes que o `mcp add` + OAuth foram feitos). Espere ele reiniciar e voltar. Esse é o **único** caminho.
+- **PARE e peça ao usuário pra completar o passo do harness dele** (Claude: **reiniciar → `/mcp` Authenticate**; Codex/Hermes: **`mcp login` → reiniciar**), confirmando o Authenticate/login **e** o reinício. Espere ele voltar. Esse é o **único** caminho.
 - **NUNCA contorne.** É **proibido**, para qualquer config da v4: chamar a **API REST direto** (mintar API key, cookie + `x-tenant-id`); fazer requisições ao endpoint `/mcp` **por fora do harness**; **ler o código-fonte/bundle da v4** (`/app/src`, `/app/dist`) pra descobrir endpoints internos; montar **OAuth manual**. Esses bypasses pulam dry-run/audit/fence, são frágeis, e **não provam o MCP**, que é o produto que esta run existe pra validar.
 - **Sinal de que você entrou no anti-padrão:** se você se pegou grepando `agents.controller.ts`, procurando `POST /api/v1/agents/import`, ou mintando uma API key pra "equivalente REST" porque "a tool não apareceu" → **PARE imediatamente** e peça o reinício. Não existe "fallback REST transitório" para config da v4.
 
