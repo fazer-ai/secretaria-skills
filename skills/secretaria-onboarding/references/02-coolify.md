@@ -6,7 +6,21 @@ A VPS pode já vir com Coolify (brownfield). Nesse caso, reaproveite o existente
 
 ### Greenfield: instalar o Coolify se a VPS vier sem ele
 
-VPS nova sem Coolify → instale com o instalador oficial. Resultado esperado: instalador sai `0`, "Your instance is ready to use!", 4 containers core Up+healthy (`coolify`, `coolify-db`, `coolify-redis`, `coolify-realtime`). Em brownfield (Coolify já presente e saudável) **reaproveite** (etapa 1b); nunca reinstale por cima de dados do usuário.
+VPS nova sem Coolify → rode o instalador oficial. **Como você invoca importa mais que o instalador** (é o passo que mais trava): ele puxa Docker + imagens (minutos), lê o próprio stdin e faz job control. Dois anti-padrões fazem ele sair com exit 1/127 fingindo estar "interativo (Y/N)" (e aí um modelo fraco entra num loop de tweaks):
+
+- **Não** jogue a saída do `curl` direto num shell (baixar-e-canalizar): o `bash` passa a ler o SCRIPT do stdin e colide com os prompts do instalador.
+- **Não** o passe pelo stdin do `remote.py`/`bash -s` (que já usa o stdin pro próprio script): o instalador herda um stdin ocupado/EOF.
+
+Em vez disso, **baixe o instalador pra um arquivo no remoto e rode o arquivo com stdin limpo (`< /dev/null`), detached**, depois faça poll (não bloqueie o terminal por minutos — a chamada pode ser cortada). O `remote.py --script-file` roda este wrapper, que faz o download+run NO remoto (sem canalizar):
+
+`install-coolify.sh`:
+```sh
+curl -fsSL https://cdn.coollabs.io/coolify/install.sh -o /tmp/coolify-install.sh
+setsid bash /tmp/coolify-install.sh < /dev/null > /tmp/coolify-install.log 2>&1 &
+echo "coolify install iniciado (pid $!); log em /tmp/coolify-install.log"
+```
+
+Depois faça **poll não-bloqueante** até ficar pronto: `curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/health` = `200` e os containers core `Up (healthy)`. Resultado esperado: `/data/coolify` criado, "Your instance is ready to use!" no log, **6 containers core** Up+healthy (`coolify`, `coolify-db`, `coolify-redis`, `coolify-realtime`, `coolify-proxy`, `coolify-sentinel`). Em brownfield (Coolify já presente e saudável) **reaproveite** (etapa 1b); nunca reinstale por cima de dados do usuário.
 
 ## 1º admin (o ÚNICO passo do usuário no Tier A)
 

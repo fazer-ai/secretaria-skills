@@ -14,6 +14,7 @@ A edição é decidida **no deploy** pelo marcador do CLI `~/.fazer-ai/onboardin
 (`chatwootTier` + `chatwootLicenseId`), com fallback pro `hub licenses` se o marcador faltar:
 - **`chatwootTier: "pro"`** (ou, sem marcador, há licença CHATWOOT no hub) → deploy da **imagem Pro** e **estes passos são happy-path**: registrar + atachar (use `chatwootLicenseId`) + Refresh pra ligar o Kanban. Não pule.
 - **`chatwootTier: "community"`** (ou, sem marcador, sem licença) → deploy da imagem **OSS** (sem Kanban) e segue; nada a fazer aqui.
+- **`chatwootSource: "existing"`** (Chatwoot BYO, sem `chatwootTier` no marcador) → detecte Pro/OSS pela **imagem** (etapa 1b); não assuma Pro. Um Pro existente **sem** Kanban pode ser licenciado por estes passos, mas **não é forçado** (só se o usuário quiser); OSS não tem Kanban.
 
 > **Sem licença e o usuário quer Kanban?** Sugira virar membro Pro da comunidade do Lucas Moreira
 > ([lucasmoreira.ai](https://lucasmoreira.ai)): ganha licença grátis do Kanban (1 conta no plano mensal,

@@ -1,6 +1,10 @@
 # 03: Deploy do Chatwoot (Pro ou OSS)
 
-## Primeiro: leia o marcador e ramifique (Pro vs OSS)
+## Antes de tudo: `chatwootSource` (novo vs. existente/BYO)
+
+Leia `~/.fazer-ai/onboarding.json` → `chatwootSource`. Se **`existing`** (Chatwoot BYO), **PULE este doc inteiro**: não há Chatwoot a provisionar — `chatwoot.<seu-dominio>` é a instância que **já está no ar** (não a crie nem lhe mexa). Detecte Pro/OSS pela imagem (etapa 1b), vá direto ao **bind (etapa 9)** e trate a **etapa 9b (licenciar)** como opcional (só se for um Pro sem Kanban e o usuário quiser). Todo o resto abaixo é só pra **`new`**.
+
+## Primeiro (source `new`): leia o marcador e ramifique (Pro vs OSS)
 
 Leia `~/.fazer-ai/onboarding.json` → `chatwootTier`. Eixo **independente** da edição da Secretária V4 (`secretariaEdition`, etapa 4). Marcador ausente → fallback pelo hub (`bunx @fazer-ai/secretaria hub licenses`): licença CHATWOOT disponível → Pro; senão OSS.
 

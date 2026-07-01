@@ -42,6 +42,8 @@ Qualquer que seja o tier, o segmento de deploy termina quando **entrega exatamen
 
 Entregou os 5 → vá direto pra **etapa 6** (a mesma pra todos os tiers).
 
+> **Chatwoot existente (`chatwootSource: existing` no marcador):** só **v4 + Langfuse** a provisionar — `chatwoot.<domínio>` é a instância que **já está no ar** (não a crie nem lhe mexa; o item 1 e o deploy do Chatwoot da trilha do tier são pulados). O admin token (item 4) vem via **Rails runner** se a instância é on-box/alcançável por SSH; se for **off-box** (Chatwoot Cloud / outro host), o **usuário fornece** um admin API token (Chatwoot → Profile → Access Token). O bind (etapa 9) usa a URL pública + esse token.
+
 ## Invariantes (valem em todos os tiers)
 
 - **`pgvector/pgvector:pg17`**, nunca Postgres puro: o schema roda `CREATE EXTENSION vector`.

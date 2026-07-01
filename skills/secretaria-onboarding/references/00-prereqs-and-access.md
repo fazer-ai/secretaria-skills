@@ -11,7 +11,7 @@
 
 O CLI `@fazer-ai/secretaria` roda ANTES do handoff e deixa marcadores que você deve **ler em vez de re-perguntar**:
 
-- **`onboarding.json`**: `{ chatwootTier: "pro" | "community", chatwootLicenseId?, secretariaEdition: "free" | "pro" }`. **Dois eixos independentes:** a edição do **Chatwoot** (`chatwootTier`, etapa 3 / `chatwoot-hub-register.md` / `templates/chatwoot/README.md`) e a edição da **Secretária V4** (`secretariaEdition`, etapa 4 / `04-secretaria-v4.md`: `pro` = imagem privada Harbor; `free` = pública). É a escolha **explícita** do operador; respeite-a (inclusive `community`/`free` = seguir sem Pro, mesmo que haja licença/acesso no hub).
+- **`onboarding.json`**: `{ chatwootSource: "new" | "existing", chatwootTier?: "pro" | "community", chatwootLicenseId?, secretariaEdition: "free" | "pro" }`. **Eixos independentes:** a **origem** do Chatwoot (`chatwootSource`: `new` = subir um novo, aí `chatwootTier` diz a edição; `existing` = plugar num Chatwoot que **já existe** / BYO, **sem** tier nem licença), a edição do **Chatwoot** quando é novo (`chatwootTier`, etapa 3 / `chatwoot-hub-register.md` / `templates/chatwoot/README.md`) e a edição da **Secretária V4** (`secretariaEdition`, etapa 4 / `04-secretaria-v4.md`: `pro` = imagem privada Harbor; `free` = pública). É a escolha **explícita** do operador; respeite-a (inclusive `existing` = não provisionar Chatwoot; `community`/`free` = seguir sem Pro, mesmo que haja licença/acesso no hub).
 - **`hostinger.json`**: `{ token }` da API Hostinger (quando o provider é Hostinger); o CLI também já o injeta nos MCPs.
 - **`preferences.json`**: defaults de UX do CLI (agente/provider/última licença); informativo, não load-bearing.
 

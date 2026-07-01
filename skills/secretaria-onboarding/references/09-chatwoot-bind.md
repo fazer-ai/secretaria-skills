@@ -1,6 +1,6 @@
 # 09: Plugar o Chatwoot na v4
 
-Sequência MCP-first. As tools de deployment são `mcp:admin` (SUPER_ADMIN); `inbox_bind` é `mcp:write`. O admin token do Chatwoot **não é credencial de vault** (é guardado encriptado na linha do deployment), então **não** use o fluxo de pending/deeplink dele. Há dois caminhos pra entregá-lo, conforme quem tem o token.
+Sequência MCP-first. As tools de deployment são `mcp:admin` (SUPER_ADMIN); `inbox_bind` é `mcp:write`. O admin token do Chatwoot **não é credencial de vault** (é guardado encriptado na linha do deployment), então **não** use o fluxo de pending/deeplink dele. Há dois caminhos pra entregá-lo, conforme quem tem o token — o **mesmo** vale para `chatwootSource: existing` (Chatwoot BYO): se a instância é on-box/alcançável por SSH, o agente pega o token via Rails runner (Caso A); se é off-box (Chatwoot Cloud / outro host), o usuário fornece o token (Caso B).
 
 ## 1. Conectar o deployment
 
