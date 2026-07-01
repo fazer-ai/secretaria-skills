@@ -15,9 +15,9 @@ agent_import { "export": <conteúdo de samples/agents/maria-clinica-moreira.json
 
 ## 2. Preencher credenciais (segredo NUNCA passa pelo agente)
 
-- Cada credencial pending tem um **deeplink** (`fillAt`) que leva o usuário direto à entrada no console pra colar o segredo. Esse é o caminho canônico das credenciais do **usuário** (OpenAI/ElevenLabs/Gemini/Asaas).
-- `credential_create { name, kind?, base_url?, param_name? }` declara uma pending nova (sem segredo) e devolve o deeplink: útil pra wirar config agora e o usuário preencher depois.
-- A chave OpenAI e as demais credenciais do **usuário** (ElevenLabs/Gemini/Asaas) o usuário preenche pelo deeplink; o segredo nunca passa pelo agente. Acompanhe pelo MCP até o status sair de `pending`. (Exceção: o Langfuse, cujas keys **você** provisiona ao semear o projeto, não é segredo do usuário; ligue na v4 via `langfuse_connect` com as keys inline, ver `references/05-langfuse.md`.)
+- **Sempre entregue o deeplink**, nunca só "vá em Configurações → Credenciais". Cada pending abre direto pelo `fillAt = ${PUBLIC_URL}/resources/vault?fill=<vaultId>` (o `?fill=<id>` abre o modal de preenchimento da entrada). É o caminho canônico das credenciais do **usuário** (OpenAI/ElevenLabs/Gemini/Asaas).
+- **De onde vem o `fillAt`:** um `credential_create` **real** (`dry_run:false`) devolve o `fillAt` na resposta. Mas o **dry-run não devolve**, e re-criar uma que já existe **duplica**. Pra uma pending que **já existe** (import/brownfield/run anterior), **não re-crie**: pegue o `id` no `vault_list` e monte a URL você mesmo (`${PUBLIC_URL}/resources/vault?fill=<id>`).
+- A chave OpenAI e as demais do **usuário** (ElevenLabs/Gemini/Asaas) o usuário preenche por esse deeplink; o segredo nunca passa pelo agente. Acompanhe pelo `vault_list` até o status sair de `pending`. (Exceção: o Langfuse, cujas keys **você** provisiona ao semear o projeto, não é segredo do usuário; ligue na v4 via `langfuse_connect` com as keys inline, ver `references/05-langfuse.md`.)
 
 ## 3. Religar o modelo + habilitar (`agent_update`)
 

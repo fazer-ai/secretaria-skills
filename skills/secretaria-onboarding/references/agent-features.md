@@ -45,7 +45,7 @@ As tools de Google usam uma credencial kind `google_oauth`. **Não há MCP write
 
 1. Pré: no Google Cloud, um OAuth 2.0 Client ID (Web) com a redirect URI
    **`${PUBLIC_URL}/api/v1/oauth/google/callback`** registrada.
-2. No console `/vault`: criar credencial kind `google_oauth` com Client ID + Client Secret.
+2. No console `/resources/vault`: criar credencial kind `google_oauth` com Client ID + Client Secret.
 3. Na `GoogleOAuthSection`: escolher os scopes (Calendar/Drive/...) → "Sign in with Google" → popup de
    consent → o callback grava os tokens (criptografados) na entrada do vault.
 4. Status: "Connected as <email>". A partir daí, as tools de Calendar/Drive resolvem por `vault:<id>` (token
