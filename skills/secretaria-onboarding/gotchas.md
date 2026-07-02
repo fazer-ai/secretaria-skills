@@ -34,6 +34,14 @@ O boot (`bootstrap → migrate → serve`) é o CMD da imagem. Um `command:` ove
 
 Sem setar o Instance Domain (`coolify.<seu-dominio>`) o painel fica só em `http://IP:8000` (HTTP puro, sem TLS). Exige o A-record.
 
+### Coolify não conecta no próprio servidor (localhost Unreachable) = chave grudada
+
+O Coolify alcança o servidor `localhost` por SSH do container `coolify` pro host (`root@host.docker.internal`), com uma chave que o instalador adiciona às **chaves autorizadas do root** via `cat >>`. Se a última linha do arquivo não terminava em newline (uma chave **colada pelo painel da VPS** chega sem `\n` final), a chave do Coolify **gruda** no fim da linha anterior e deixa de ser entrada válida → servidor `localhost` **Unreachable** → **todo deploy falha** (sem erro de SSH claro; a UI só mostra inacessível). Determinístico: repete a cada install nessa condição. **Não edite as chaves autorizadas na mão** (SSH→PowerShell mangla o quoting). Fix idempotente, logo após o Coolify subir e **antes** de deployar:
+```sh
+python3 scripts/coolify.py heal-localhost --ssh root@<VPS_IP>   # normaliza as chaves + verifica container->host
+```
+`reachable:true` → segue. Detalhe em `references/02-coolify.md`.
+
 ### `prisma migrate reset` quebra a runtime role (local/dev)
 
 Reset recria o schema `public` e leva junto os grants da app role → próximo boot dá `42501 permission denied for schema public`. Nunca rode bare `migrate reset`; use `bun db:reset` (ou re-rode `bun db:bootstrap`).

@@ -22,6 +22,16 @@ echo "coolify install iniciado (pid $!); log em /tmp/coolify-install.log"
 
 Depois faça **poll não-bloqueante** até ficar pronto: `curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/health` = `200` e os containers core `Up (healthy)`. Resultado esperado: `/data/coolify` criado, "Your instance is ready to use!" no log, **6 containers core** Up+healthy (`coolify`, `coolify-db`, `coolify-redis`, `coolify-realtime`, `coolify-proxy`, `coolify-sentinel`). Em brownfield (Coolify já presente e saudável) **reaproveite** (etapa 1b); nunca reinstale por cima de dados do usuário.
 
+## Verifique que o Coolify alcança o próprio servidor (localhost) — auto-repare a chave
+
+Assim que o Coolify está de pé (greenfield recém-instalado OU brownfield reaproveitado), **confirme que ele consegue se conectar ao próprio host** antes de qualquer deploy. O Coolify gerencia o servidor `localhost` por SSH, do container `coolify` para o host (`root@host.docker.internal`), com uma chave que o instalador adiciona às **chaves autorizadas do root**. É uma falha silenciosa e recorrente: se a última linha desse arquivo **não terminava em newline** (uma chave colada pelo painel da VPS costuma chegar assim), o `cat >>` do instalador **cola** a chave do Coolify no fim da linha anterior — ela deixa de ser uma entrada válida, o servidor `localhost` fica **Unreachable** e **todo deploy falha depois** (sem erro óbvio; a UI só mostra o servidor inacessível).
+
+Não conserte na mão (editar as chaves autorizadas por SSH→PowerShell é a classe de quoting que mais quebra). Rode o helper — ele normaliza o arquivo (uma chave por linha, sem linhas grudadas, newline no fim, permissões), garante a chave do Coolify como linha própria, e **verifica** o SSH container→host:
+```sh
+python3 scripts/coolify.py heal-localhost --ssh root@<VPS_IP>
+```
+`reachable:true` → o Coolify alcança o próprio host; siga. **Idempotente**: rode sempre (greenfield ou brownfield); se já estava são, não muda nada e confirma `reachable:true`. O flag interno do Coolify (`is_reachable`) fica em cache e **não** revalida sozinho de forma confiável (o job periódico costuma ser pulado por lock); ele só reflete o conserto após um `docker restart coolify` — que o passo do **Instance Domain** já faz antes dos deploys, então um "Unreachable" na UI até lá é cosmético. Se **não** for setar o Instance Domain antes do 1º deploy, rode `docker restart coolify` depois do heal pra revalidar. `reachable:false` → confira que o container `coolify` está `Up` e que o host aceita login root por chave, e re-rode.
+
 ## 1º admin (o ÚNICO passo do usuário no Tier A)
 
 O **usuário cria** o 1º admin pelo browser em `http://<VPS_IP>:8000` (gate de conta): **esse é o único passo manual do Tier A**; você entrega o link e **espera** (`wait-admin`), nunca cria por conta própria. Depois do admin, **NÃO peça mais nada ao usuário**: o token e o Instance Domain você faz por SSH (abaixo). **Nunca** mande o usuário abrir "Settings → …".
